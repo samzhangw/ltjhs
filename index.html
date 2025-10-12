@@ -483,36 +483,68 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // 設定canvas大小（棋盤區域 + 邊距）
-                const cellSize = 50; // 每個格子的大小
-                const padding = 20; // 邊距
+                // 設定canvas大小（棋盤區域 + 邊距 + 標題區域）
+                const cellSize = 60; // 每個格子的大小
+                const padding = 30; // 邊距
+                const headerHeight = 80; // 標題區域高度
                 const boardWidth = boardCols * cellSize;
                 const boardHeight = boardRows * cellSize;
                 canvas.width = boardWidth + padding * 2;
-                canvas.height = boardHeight + padding * 2;
+                canvas.height = boardHeight + padding * 2 + headerHeight;
                 
-                // 設定背景色
-                ctx.fillStyle = '#f8f9fa';
+                // 繪製背景漸層
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
+                // 繪製白色背景區域
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+                
+                // 繪製標題區域
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 24px Microsoft JhengHei, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🎮 棋盤翻轉遊戲', canvas.width / 2, 35);
+                
+                // 繪製遊戲信息
+                ctx.font = '16px Microsoft JhengHei, Arial, sans-serif';
+                ctx.fillStyle = '#666';
+                ctx.fillText(`棋盤大小: ${boardRows}×${boardCols}`, canvas.width / 2, 55);
+                ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                
+                // 計算棋盤位置（在標題下方）
+                const boardX = padding;
+                const boardY = padding + headerHeight;
+                
+                // 繪製棋盤陰影
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(boardX + 3, boardY + 3, boardWidth, boardHeight);
+                
+                // 繪製棋盤背景
+                ctx.fillStyle = '#333';
+                ctx.fillRect(boardX, boardY, boardWidth, boardHeight);
+                
                 // 繪製棋盤邊框
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(padding - 2, padding - 2, boardWidth + 4, boardHeight + 4);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boardX, boardY, boardWidth, boardHeight);
                 
                 // 繪製每個格子
                 for (let i = 0; i < boardRows; i++) {
                     for (let j = 0; j < boardCols; j++) {
-                        const x = padding + j * cellSize;
-                        const y = padding + i * cellSize;
+                        const x = boardX + j * cellSize;
+                        const y = boardY + i * cellSize;
                         
                         // 設定格子顏色
                         if (board[i][j] === 'white') {
-                            ctx.fillStyle = '#f0f0f0';
+                            ctx.fillStyle = '#f8f8f8';
                         } else if (board[i][j] === 'gray') {
-                            ctx.fillStyle = '#888';
+                            ctx.fillStyle = '#888888';
                         } else if (board[i][j] === 'black') {
-                            ctx.fillStyle = '#333';
+                            ctx.fillStyle = '#2c2c2c';
                         }
                         
                         // 繪製格子
@@ -522,15 +554,32 @@
                         ctx.strokeStyle = '#666';
                         ctx.lineWidth = 1;
                         ctx.strokeRect(x, y, cellSize, cellSize);
+                        
+                        // 添加格子高光效果
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + cellSize, y);
+                        ctx.lineTo(x + cellSize, y + cellSize);
+                        ctx.stroke();
                     }
                 }
                 
-                // 添加遊戲信息文字
-                ctx.fillStyle = '#333';
-                ctx.font = '16px Microsoft JhengHei, Arial, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`棋盤翻轉遊戲 - ${boardRows}×${boardCols}`, canvas.width / 2, 20);
-                ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 移動次數: ${moveCount}`, canvas.width / 2, 40);
+                // 添加勝利狀態指示
+                if (gameWon) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.font = 'bold 18px Microsoft JhengHei, Arial, sans-serif';
+                    ctx.fillText('🎉 勝利！', canvas.width / 2, canvas.height - 20);
+                }
+                
+                // 添加時間戳記
+                const now = new Date();
+                const timeString = now.toLocaleString('zh-TW');
+                ctx.fillStyle = '#999';
+                ctx.font = '12px Microsoft JhengHei, Arial, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(`生成時間: ${timeString}`, canvas.width - 15, canvas.height - 5);
                 
                 // 轉換為PNG並下載
                 canvas.toBlob(function(blob) {
@@ -586,3 +635,4 @@
     </script>
 </body>
 </html>
+
