@@ -2,19 +2,25 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>棋盤翻轉遊戲</title>
     <style>
         body {
             font-family: 'Microsoft JhengHei', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
         }
 
         .game-container {
@@ -27,6 +33,14 @@
             width: 100%;
         }
 
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+                border-radius: 15px;
+                margin: 5px;
+            }
+        }
+
         h1 {
             color: #333;
             margin-bottom: 20px;
@@ -34,10 +48,24 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+        }
+
         .game-info {
             margin-bottom: 20px;
             color: #666;
             font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .game-info {
+                font-size: 1em;
+                margin-bottom: 15px;
+            }
         }
 
         .board {
@@ -50,18 +78,41 @@
             background: #333;
         }
 
+        @media (max-width: 768px) {
+            .board {
+                margin: 15px auto;
+                gap: 1px;
+                border: 2px solid #333;
+                padding: 3px;
+            }
+        }
+
         .cell {
             aspect-ratio: 1;
             border: 1px solid #666;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            min-width: 30px;
+            min-height: 30px;
         }
 
         .cell:hover {
             transform: scale(1.1);
             z-index: 10;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .cell {
+                min-width: 25px;
+                min-height: 25px;
+                border: 0.5px solid #666;
+            }
+            
+            .cell:hover {
+                transform: scale(1.05);
+            }
         }
 
         .cell.white {
@@ -82,6 +133,15 @@
             gap: 15px;
             justify-content: center;
             flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                margin-top: 15px;
+                gap: 8px;
+                flex-direction: column;
+                align-items: center;
+            }
         }
 
         button {
@@ -106,6 +166,16 @@
             transform: translateY(0);
         }
 
+        @media (max-width: 768px) {
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+                width: 100%;
+                max-width: 200px;
+                margin: 2px 0;
+            }
+        }
+
         .size-selector {
             margin: 15px 0;
         }
@@ -123,6 +193,28 @@
             font-size: 1em;
         }
 
+        @media (max-width: 768px) {
+            .size-selector {
+                margin: 10px 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .size-selector label {
+                margin-right: 0;
+                margin-bottom: 5px;
+                font-size: 0.9em;
+            }
+            
+            .size-selector input {
+                width: 100%;
+                max-width: 120px;
+                text-align: center;
+            }
+        }
+
         .victory-message {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
@@ -132,6 +224,14 @@
             font-size: 1.3em;
             font-weight: bold;
             animation: pulse 1s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .victory-message {
+                padding: 15px;
+                margin-top: 15px;
+                font-size: 1.1em;
+            }
         }
 
         @keyframes pulse {
@@ -147,6 +247,14 @@
             margin: 10px 0;
             font-weight: bold;
             color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .moves-counter {
+                padding: 8px 15px;
+                margin: 8px 0;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
@@ -186,6 +294,7 @@
             <button onclick="newGame()">🔄 新遊戲</button>
             <button onclick="resetGame()">↩️ 重新開始</button>
             <button onclick="showHint()">💡 提示</button>
+            <button onclick="exportToPNG()">📸 匯出PNG</button>
         </div>
 
         <div id="victoryMessage" class="victory-message" style="display: none;">
@@ -365,6 +474,79 @@
             
             // 簡單提示：告訴玩家目標
             alert(`提示：\n1. 目標是讓左上角變成白色\n2. 整個棋盤要形成西洋棋盤樣式\n3. 點擊${flipRows}×${flipCols}的區域來改變顏色\n4. 顏色變化：白→灰→黑→白`);
+        }
+
+        // 匯出PNG功能
+        function exportToPNG() {
+            try {
+                // 創建一個臨時的canvas元素
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 設定canvas大小（棋盤區域 + 邊距）
+                const cellSize = 50; // 每個格子的大小
+                const padding = 20; // 邊距
+                const boardWidth = boardCols * cellSize;
+                const boardHeight = boardRows * cellSize;
+                canvas.width = boardWidth + padding * 2;
+                canvas.height = boardHeight + padding * 2;
+                
+                // 設定背景色
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 繪製棋盤邊框
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(padding - 2, padding - 2, boardWidth + 4, boardHeight + 4);
+                
+                // 繪製每個格子
+                for (let i = 0; i < boardRows; i++) {
+                    for (let j = 0; j < boardCols; j++) {
+                        const x = padding + j * cellSize;
+                        const y = padding + i * cellSize;
+                        
+                        // 設定格子顏色
+                        if (board[i][j] === 'white') {
+                            ctx.fillStyle = '#f0f0f0';
+                        } else if (board[i][j] === 'gray') {
+                            ctx.fillStyle = '#888';
+                        } else if (board[i][j] === 'black') {
+                            ctx.fillStyle = '#333';
+                        }
+                        
+                        // 繪製格子
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                        
+                        // 繪製格子邊框
+                        ctx.strokeStyle = '#666';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, cellSize, cellSize);
+                    }
+                }
+                
+                // 添加遊戲信息文字
+                ctx.fillStyle = '#333';
+                ctx.font = '16px Microsoft JhengHei, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`棋盤翻轉遊戲 - ${boardRows}×${boardCols}`, canvas.width / 2, 20);
+                ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 移動次數: ${moveCount}`, canvas.width / 2, 40);
+                
+                // 轉換為PNG並下載
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `棋盤翻轉遊戲_${boardRows}x${boardCols}_${flipRows}x${flipCols}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 'image/png');
+                
+            } catch (error) {
+                alert('匯出PNG失敗：' + error.message);
+            }
         }
 
         // 棋盤行數改變時重新初始化
