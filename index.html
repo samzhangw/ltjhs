@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>棋盤翻轉遊戲</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-info {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .board {
+            display: grid;
+            gap: 2px;
+            margin: 20px auto;
+            border: 3px solid #333;
+            border-radius: 10px;
+            padding: 5px;
+            background: #333;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            border: 1px solid #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .cell.white {
+            background-color: #f0f0f0;
+        }
+
+        .cell.gray {
+            background-color: #888;
+        }
+
+        .cell.black {
+            background-color: #333;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .size-selector {
+            margin: 15px 0;
+        }
+
+        .size-selector label {
+            margin-right: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .size-selector select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            font-size: 1em;
+        }
+
+        .victory-message {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .moves-counter {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 棋盤翻轉遊戲</h1>
+        <div class="game-info">
+            點擊自訂大小的區域來改變顏色<br>
+            目標：讓左上角變成白色！
+        </div>
+        
+        <div class="size-selector">
+            <label for="boardSize">棋盤大小：</label>
+            <input type="number" id="boardSize" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(3-15)</span>
+        </div>
+        
+        <div class="size-selector">
+            <label for="flipSize">翻轉區域大小：</label>
+            <input type="number" id="flipSize" min="2" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(2-5)</span>
+        </div>
+
+        <div class="moves-counter">
+            移動次數：<span id="moveCount">0</span>
+        </div>
+
+        <div id="board" class="board"></div>
+        
+        <div class="controls">
+            <button onclick="newGame()">🔄 新遊戲</button>
+            <button onclick="resetGame()">↩️ 重新開始</button>
+            <button onclick="showHint()">💡 提示</button>
+        </div>
+
+        <div id="victoryMessage" class="victory-message" style="display: none;">
+            🎉 恭喜！您成功完成了遊戲！🎉
+        </div>
+    </div>
+
+    <script>
+        let boardSize = 4;
+        let flipSize = 2;
+        let board = [];
+        let moveCount = 0;
+        let gameWon = false;
+
+        // 初始化遊戲
+        function initGame() {
+            const inputSize = parseInt(document.getElementById('boardSize').value);
+            const inputFlipSize = parseInt(document.getElementById('flipSize').value);
+            
+            // 確保棋盤大小在合理範圍內
+            if (inputSize < 3) {
+                boardSize = 3;
+                document.getElementById('boardSize').value = 3;
+            } else if (inputSize > 15) {
+                boardSize = 15;
+                document.getElementById('boardSize').value = 15;
+            } else {
+                boardSize = inputSize;
+            }
+            
+            // 確保翻轉區域大小在合理範圍內
+            if (inputFlipSize < 2) {
+                flipSize = 2;
+                document.getElementById('flipSize').value = 2;
+            } else if (inputFlipSize > 5) {
+                flipSize = 5;
+                document.getElementById('flipSize').value = 5;
+            } else {
+                flipSize = inputFlipSize;
+            }
+            
+            board = [];
+            moveCount = 0;
+            gameWon = false;
+            
+            // 創建初始棋盤（西洋棋盤樣式，左上角黑色）
+            for (let i = 0; i < boardSize; i++) {
+                board[i] = [];
+                for (let j = 0; j < boardSize; j++) {
+                    board[i][j] = (i + j) % 2 === 0 ? 'black' : 'white';
+                }
+            }
+            
+            renderBoard();
+            updateMoveCount();
+            document.getElementById('victoryMessage').style.display = 'none';
+        }
+
+        // 渲染棋盤
+        function renderBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+            boardElement.innerHTML = '';
+
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${board[i][j]}`;
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', () => handleCellClick(i, j));
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 處理格子點擊
+        function handleCellClick(row, col) {
+            if (gameWon) return;
+
+            // 檢查是否可以形成指定大小的翻轉區域
+            if (row >= boardSize - flipSize + 1 || col >= boardSize - flipSize + 1) {
+                alert(`請選擇可以形成${flipSize}×${flipSize}區域的位置！`);
+                return;
+            }
+
+            // 翻轉指定大小的區域
+            flipSquare(row, col);
+            moveCount++;
+            updateMoveCount();
+            
+            // 檢查勝利條件
+            if (checkVictory()) {
+                gameWon = true;
+                document.getElementById('victoryMessage').style.display = 'block';
+            }
+        }
+
+        // 翻轉指定大小的區域
+        function flipSquare(startRow, startCol) {
+            for (let i = startRow; i < startRow + flipSize; i++) {
+                for (let j = startCol; j < startCol + flipSize; j++) {
+                    // 顏色變化：白→灰→黑→白
+                    if (board[i][j] === 'white') {
+                        board[i][j] = 'gray';
+                    } else if (board[i][j] === 'gray') {
+                        board[i][j] = 'black';
+                    } else if (board[i][j] === 'black') {
+                        board[i][j] = 'white';
+                    }
+                }
+            }
+            renderBoard();
+        }
+
+        // 檢查勝利條件
+        function checkVictory() {
+            // 目標：左上角是白色，其他格子形成西洋棋盤樣式
+            if (board[0][0] !== 'white') return false;
+            
+            // 檢查整個棋盤是否為西洋棋盤樣式
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const expectedColor = (i + j) % 2 === 0 ? 'white' : 'black';
+                    if (board[i][j] !== expectedColor) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // 更新移動次數
+        function updateMoveCount() {
+            document.getElementById('moveCount').textContent = moveCount;
+        }
+
+        // 新遊戲
+        function newGame() {
+            initGame();
+        }
+
+        // 重新開始
+        function resetGame() {
+            initGame();
+        }
+
+        // 顯示提示
+        function showHint() {
+            if (gameWon) return;
+            
+            // 簡單提示：告訴玩家目標
+            alert(`提示：\n1. 目標是讓左上角變成白色\n2. 整個棋盤要形成西洋棋盤樣式\n3. 點擊${flipSize}×${flipSize}的區域來改變顏色\n4. 顏色變化：白→灰→黑→白`);
+        }
+
+        // 棋盤大小改變時重新初始化
+        document.getElementById('boardSize').addEventListener('input', function() {
+            const size = parseInt(this.value);
+            if (size >= 3 && size <= 15) {
+                initGame();
+            }
+        });
+
+        // 翻轉區域大小改變時重新初始化
+        document.getElementById('flipSize').addEventListener('input', function() {
+            const size = parseInt(this.value);
+            if (size >= 2 && size <= 5) {
+                initGame();
+            }
+        });
+
+        // 初始化遊戲
+        initGame();
+    </script>
+</body>
+</html>
