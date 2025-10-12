@@ -159,15 +159,21 @@
         </div>
         
         <div class="size-selector">
-            <label for="boardSize">棋盤大小：</label>
-            <input type="number" id="boardSize" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <label for="boardRows">棋盤行數：</label>
+            <input type="number" id="boardRows" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin: 0 10px; color: #666;">×</span>
+            <label for="boardCols">列數：</label>
+            <input type="number" id="boardCols" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
             <span style="margin-left: 10px; color: #666;">(3-15)</span>
         </div>
         
         <div class="size-selector">
-            <label for="flipSize">翻轉區域大小：</label>
-            <input type="number" id="flipSize" min="2" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(2-5)</span>
+            <label for="flipRows">翻轉區域行數：</label>
+            <input type="number" id="flipRows" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin: 0 10px; color: #666;">×</span>
+            <label for="flipCols">列數：</label>
+            <input type="number" id="flipCols" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(1-5)</span>
         </div>
 
         <div class="moves-counter">
@@ -188,37 +194,63 @@
     </div>
 
     <script>
-        let boardSize = 4;
-        let flipSize = 2;
+        let boardRows = 4;
+        let boardCols = 4;
+        let flipRows = 2;
+        let flipCols = 2;
         let board = [];
         let moveCount = 0;
         let gameWon = false;
 
         // 初始化遊戲
         function initGame() {
-            const inputSize = parseInt(document.getElementById('boardSize').value);
-            const inputFlipSize = parseInt(document.getElementById('flipSize').value);
+            const inputRows = parseInt(document.getElementById('boardRows').value);
+            const inputCols = parseInt(document.getElementById('boardCols').value);
+            const inputFlipRows = parseInt(document.getElementById('flipRows').value);
+            const inputFlipCols = parseInt(document.getElementById('flipCols').value);
             
-            // 確保棋盤大小在合理範圍內
-            if (inputSize < 3) {
-                boardSize = 3;
-                document.getElementById('boardSize').value = 3;
-            } else if (inputSize > 15) {
-                boardSize = 15;
-                document.getElementById('boardSize').value = 15;
+            // 確保棋盤行數在合理範圍內
+            if (inputRows < 3) {
+                boardRows = 3;
+                document.getElementById('boardRows').value = 3;
+            } else if (inputRows > 15) {
+                boardRows = 15;
+                document.getElementById('boardRows').value = 15;
             } else {
-                boardSize = inputSize;
+                boardRows = inputRows;
             }
             
-            // 確保翻轉區域大小在合理範圍內
-            if (inputFlipSize < 2) {
-                flipSize = 2;
-                document.getElementById('flipSize').value = 2;
-            } else if (inputFlipSize > 5) {
-                flipSize = 5;
-                document.getElementById('flipSize').value = 5;
+            // 確保棋盤列數在合理範圍內
+            if (inputCols < 3) {
+                boardCols = 3;
+                document.getElementById('boardCols').value = 3;
+            } else if (inputCols > 15) {
+                boardCols = 15;
+                document.getElementById('boardCols').value = 15;
             } else {
-                flipSize = inputFlipSize;
+                boardCols = inputCols;
+            }
+            
+            // 確保翻轉區域行數在合理範圍內
+            if (inputFlipRows < 1) {
+                flipRows = 1;
+                document.getElementById('flipRows').value = 1;
+            } else if (inputFlipRows > 5) {
+                flipRows = 5;
+                document.getElementById('flipRows').value = 5;
+            } else {
+                flipRows = inputFlipRows;
+            }
+            
+            // 確保翻轉區域列數在合理範圍內
+            if (inputFlipCols < 1) {
+                flipCols = 1;
+                document.getElementById('flipCols').value = 1;
+            } else if (inputFlipCols > 5) {
+                flipCols = 5;
+                document.getElementById('flipCols').value = 5;
+            } else {
+                flipCols = inputFlipCols;
             }
             
             board = [];
@@ -226,9 +258,9 @@
             gameWon = false;
             
             // 創建初始棋盤（西洋棋盤樣式，左上角黑色）
-            for (let i = 0; i < boardSize; i++) {
+            for (let i = 0; i < boardRows; i++) {
                 board[i] = [];
-                for (let j = 0; j < boardSize; j++) {
+                for (let j = 0; j < boardCols; j++) {
                     board[i][j] = (i + j) % 2 === 0 ? 'black' : 'white';
                 }
             }
@@ -241,11 +273,11 @@
         // 渲染棋盤
         function renderBoard() {
             const boardElement = document.getElementById('board');
-            boardElement.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+            boardElement.style.gridTemplateColumns = `repeat(${boardCols}, 1fr)`;
             boardElement.innerHTML = '';
 
-            for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
+            for (let i = 0; i < boardRows; i++) {
+                for (let j = 0; j < boardCols; j++) {
                     const cell = document.createElement('div');
                     cell.className = `cell ${board[i][j]}`;
                     cell.dataset.row = i;
@@ -261,8 +293,8 @@
             if (gameWon) return;
 
             // 檢查是否可以形成指定大小的翻轉區域
-            if (row >= boardSize - flipSize + 1 || col >= boardSize - flipSize + 1) {
-                alert(`請選擇可以形成${flipSize}×${flipSize}區域的位置！`);
+            if (row >= boardRows - flipRows + 1 || col >= boardCols - flipCols + 1) {
+                alert(`請選擇可以形成${flipRows}×${flipCols}區域的位置！`);
                 return;
             }
 
@@ -280,8 +312,8 @@
 
         // 翻轉指定大小的區域
         function flipSquare(startRow, startCol) {
-            for (let i = startRow; i < startRow + flipSize; i++) {
-                for (let j = startCol; j < startCol + flipSize; j++) {
+            for (let i = startRow; i < startRow + flipRows; i++) {
+                for (let j = startCol; j < startCol + flipCols; j++) {
                     // 顏色變化：白→灰→黑→白
                     if (board[i][j] === 'white') {
                         board[i][j] = 'gray';
@@ -301,8 +333,8 @@
             if (board[0][0] !== 'white') return false;
             
             // 檢查整個棋盤是否為西洋棋盤樣式
-            for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
+            for (let i = 0; i < boardRows; i++) {
+                for (let j = 0; j < boardCols; j++) {
                     const expectedColor = (i + j) % 2 === 0 ? 'white' : 'black';
                     if (board[i][j] !== expectedColor) {
                         return false;
@@ -332,21 +364,37 @@
             if (gameWon) return;
             
             // 簡單提示：告訴玩家目標
-            alert(`提示：\n1. 目標是讓左上角變成白色\n2. 整個棋盤要形成西洋棋盤樣式\n3. 點擊${flipSize}×${flipSize}的區域來改變顏色\n4. 顏色變化：白→灰→黑→白`);
+            alert(`提示：\n1. 目標是讓左上角變成白色\n2. 整個棋盤要形成西洋棋盤樣式\n3. 點擊${flipRows}×${flipCols}的區域來改變顏色\n4. 顏色變化：白→灰→黑→白`);
         }
 
-        // 棋盤大小改變時重新初始化
-        document.getElementById('boardSize').addEventListener('input', function() {
-            const size = parseInt(this.value);
-            if (size >= 3 && size <= 15) {
+        // 棋盤行數改變時重新初始化
+        document.getElementById('boardRows').addEventListener('input', function() {
+            const rows = parseInt(this.value);
+            if (rows >= 3 && rows <= 15) {
                 initGame();
             }
         });
 
-        // 翻轉區域大小改變時重新初始化
-        document.getElementById('flipSize').addEventListener('input', function() {
-            const size = parseInt(this.value);
-            if (size >= 2 && size <= 5) {
+        // 棋盤列數改變時重新初始化
+        document.getElementById('boardCols').addEventListener('input', function() {
+            const cols = parseInt(this.value);
+            if (cols >= 3 && cols <= 15) {
+                initGame();
+            }
+        });
+
+        // 翻轉區域行數改變時重新初始化
+        document.getElementById('flipRows').addEventListener('input', function() {
+            const rows = parseInt(this.value);
+            if (rows >= 1 && rows <= 5) {
+                initGame();
+            }
+        });
+
+        // 翻轉區域列數改變時重新初始化
+        document.getElementById('flipCols').addEventListener('input', function() {
+            const cols = parseInt(this.value);
+            if (cols >= 1 && cols <= 5) {
                 initGame();
             }
         });
