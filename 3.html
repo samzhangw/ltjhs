@@ -1,0 +1,1356 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>棋盤翻轉數字遊戲</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                0 0 0 1px rgba(255,255,255,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            text-align: center;
+            max-width: 650px;
+            width: 100%;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-radius: 25px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+                border-radius: 15px;
+                margin: 5px;
+            }
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
+            font-size: 2.8em;
+            font-weight: 800;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            animation: gradientShift 3s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+        }
+
+        .game-info {
+            margin-bottom: 25px;
+            color: #555;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 15px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .game-info {
+                font-size: 1em;
+                margin-bottom: 15px;
+            }
+        }
+
+        .board {
+            display: grid;
+            gap: 3px;
+            margin: 25px auto;
+            border: 3px solid #2c3e50;
+            border-radius: 15px;
+            padding: 8px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            box-shadow: 
+                0 10px 25px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .board::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 17px;
+            z-index: -1;
+        }
+
+        @media (max-width: 768px) {
+            .board {
+                margin: 15px auto;
+                gap: 1px;
+                border: 2px solid #333;
+                padding: 3px;
+            }
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            min-width: 30px;
+            min-height: 30px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .cell:hover {
+            transform: scale(1.08) translateY(-2px);
+            z-index: 10;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.15),
+                0 0 0 1px rgba(255,255,255,0.2);
+        }
+
+        .cell:hover::before {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .cell {
+                min-width: 25px;
+                min-height: 25px;
+                border: 0.5px solid #666;
+            }
+            
+            .cell:hover {
+                transform: scale(1.05);
+            }
+        }
+
+        .cell {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2c3e50;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        /* Redesigned control layout */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            align-items: start;
+        }
+        .control-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
+            border: 1px solid rgba(102, 126, 234, 0.15);
+            border-radius: 14px;
+            padding: 10px;
+        }
+        .control-section--full { grid-column: 1 / -1; }
+
+        @media (max-width: 768px) {
+            .controls { margin-top: 15px; }
+            .controls-grid { grid-template-columns: 1fr; }
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            background-size: 200% 200%;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 6px 20px rgba(102, 126, 234, 0.3),
+                0 0 0 1px rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 10px 30px rgba(102, 126, 234, 0.4),
+                0 0 0 1px rgba(255,255,255,0.2);
+            background-position: 100% 0;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:active {
+            transform: translateY(-1px) scale(1.01);
+        }
+
+        @media (max-width: 768px) {
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+                width: 100%;
+                max-width: 200px;
+                margin: 2px 0;
+            }
+        }
+
+        .size-selector {
+            margin: 20px 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(5px);
+            position: relative;
+        }
+
+        .size-selector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-radius: 20px;
+            pointer-events: none;
+        }
+
+        .size-selector label {
+            margin-right: 12px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.05em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .size-selector input {
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            font-size: 1em;
+            background: rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .size-selector input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255,255,255,0.95);
+        }
+
+        @media (max-width: 768px) {
+            .size-selector {
+                margin: 10px 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .size-selector label {
+                margin-right: 0;
+                margin-bottom: 5px;
+                font-size: 0.9em;
+            }
+            
+            .size-selector input {
+                width: 100%;
+                max-width: 120px;
+                text-align: center;
+            }
+        }
+
+        .victory-message {
+            background: linear-gradient(135deg, #4CAF50, #45a049, #2E7D32);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-top: 25px;
+            font-size: 1.4em;
+            font-weight: 700;
+            animation: victoryPulse 1.5s ease-in-out infinite;
+            box-shadow: 
+                0 10px 30px rgba(76, 175, 80, 0.3),
+                0 0 0 1px rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .victory-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            border-radius: 20px;
+        }
+
+        @keyframes victoryPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 
+                    0 10px 30px rgba(76, 175, 80, 0.3),
+                    0 0 0 1px rgba(255,255,255,0.2);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 
+                    0 15px 40px rgba(76, 175, 80, 0.4),
+                    0 0 0 2px rgba(255,255,255,0.3);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .victory-message {
+                padding: 15px;
+                margin-top: 15px;
+                font-size: 1.1em;
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .moves-counter {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin: 15px 0;
+            font-weight: 600;
+            color: #2c3e50;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .moves-counter::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @media (max-width: 768px) {
+            .moves-counter {
+                padding: 8px 15px;
+                margin: 8px 0;
+                font-size: 0.9em;
+            }
+        }
+        
+        /* 3D cube effect for each cell */
+        :root { --cube-depth: 12px; }
+
+        .board {
+            perspective: 800px;
+        }
+
+        /* Front face remains the main .cell box */
+        .cell {
+            background: linear-gradient(145deg, #eef1f5, #dfe4ea);
+            box-shadow:
+                0 10px 20px rgba(0,0,0,0.15),
+                inset 0 1px 2px rgba(255,255,255,0.5);
+        }
+
+        /* Top face */
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: calc(var(--cube-depth) * -1);
+            left: 0;
+            width: 100%;
+            height: var(--cube-depth);
+            background: linear-gradient(135deg, #ffffff, #e6ebf1);
+            transform: skewX(-45deg);
+            transform-origin: bottom left;
+            opacity: 1; /* override previous hover highlight */
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            box-shadow: 0 2px 2px rgba(0,0,0,0.05);
+        }
+
+        /* Right face */
+        .cell::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: calc(var(--cube-depth) * -1);
+            width: var(--cube-depth);
+            height: 100%;
+            background: linear-gradient(135deg, #cfd6de, #b9c1cc);
+            transform: skewY(-45deg);
+            transform-origin: top left;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.08);
+        }
+
+        /* Lift and emphasize cube on hover */
+        .cell:hover {
+            transform: translateY(calc(var(--cube-depth) * -0.25)) scale(1.05);
+            box-shadow:
+                0 16px 30px rgba(0,0,0,0.2),
+                0 0 0 1px rgba(255,255,255,0.25);
+        }
+        
+        /* Keep numbers readable above faces */
+        .cell {
+            z-index: 0;
+        }
+        .cell > * { position: relative; z-index: 1; }
+        
+        /* === 3D Cube container and faces === */
+        .cube-scene {
+            width: min(520px, 90vw);
+            height: min(520px, 90vw);
+            margin: 25px auto;
+            perspective: 1000px;
+        }
+
+        .cube {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s ease;
+            --cube-size: min(520px, 90vw);
+            --half: calc(var(--cube-size) / 2);
+        }
+
+        .cube-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Place each face */
+        .cube-face--front { transform: translateZ(var(--half)); }
+        .cube-face--back { transform: rotateY(180deg) translateZ(var(--half)); }
+        .cube-face--right { transform: rotateY(90deg) translateZ(var(--half)); }
+        .cube-face--left { transform: rotateY(-90deg) translateZ(var(--half)); }
+        .cube-face--top { transform: rotateX(90deg) translateZ(var(--half)); }
+        .cube-face--bottom { transform: rotateX(-90deg) translateZ(var(--half)); }
+
+        /* Fit board nicely within each face */
+        .cube-face .board {
+            width: 90%;
+            height: 90%;
+        }
+
+        /* === Face-specific color themes === */
+        .cube-face--front .cell {
+            background: linear-gradient(145deg, #e7f0ff, #cfe0ff);
+            color: #1f3b87;
+            border-color: rgba(31, 59, 135, 0.15);
+        }
+        .cube-face--back .cell {
+            background: linear-gradient(145deg, #e9f8ef, #cdeed8);
+            color: #1f6b3a;
+            border-color: rgba(31, 107, 58, 0.15);
+        }
+        .cube-face--right .cell {
+            background: linear-gradient(145deg, #fff1e5, #ffd9b8);
+            color: #8a4b06;
+            border-color: rgba(138, 75, 6, 0.15);
+        }
+        .cube-face--left .cell {
+            background: linear-gradient(145deg, #f3e8ff, #e1ccff);
+            color: #5b2d90;
+            border-color: rgba(91, 45, 144, 0.15);
+        }
+        .cube-face--top .cell {
+            background: linear-gradient(145deg, #e6fbfb, #c7f1f1);
+            color: #0f6666;
+            border-color: rgba(15, 102, 102, 0.15);
+        }
+        .cube-face--bottom .cell {
+            background: linear-gradient(145deg, #ffe8ea, #ffcdd2);
+            color: #7a1020;
+            border-color: rgba(122, 16, 32, 0.15);
+        }
+
+        /* Sync indicator base */
+        .cell.synced {
+            position: relative;
+        }
+        /* Group color palette (outline + glow) */
+        .cell.group-color-0 { outline: 3px solid rgba(244, 67, 54, 0.9); box-shadow: 0 0 12px rgba(244, 67, 54, 0.5); }
+        .cell.group-color-1 { outline: 3px solid rgba(255, 152, 0, 0.9); box-shadow: 0 0 12px rgba(255, 152, 0, 0.5); }
+        .cell.group-color-2 { outline: 3px solid rgba(255, 235, 59, 0.95); box-shadow: 0 0 12px rgba(255, 235, 59, 0.5); }
+        .cell.group-color-3 { outline: 3px solid rgba(76, 175, 80, 0.9); box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
+        .cell.group-color-4 { outline: 3px solid rgba(0, 150, 136, 0.9); box-shadow: 0 0 12px rgba(0, 150, 136, 0.5); }
+        .cell.group-color-5 { outline: 3px solid rgba(33, 150, 243, 0.9); box-shadow: 0 0 12px rgba(33, 150, 243, 0.5); }
+        .cell.group-color-6 { outline: 3px solid rgba(156, 39, 176, 0.9); box-shadow: 0 0 12px rgba(156, 39, 176, 0.5); }
+        .cell.group-color-7 { outline: 3px solid rgba(233, 30, 99, 0.9); box-shadow: 0 0 12px rgba(233, 30, 99, 0.5); }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 棋盤翻轉數字遊戲</h1>
+        <div class="game-info">
+            點擊自訂大小的區域來改變數字<br>
+            目標：讓所有00變成01，所有01變成00！
+        </div>
+        
+        <div class="size-selector">
+            <label for="boardRows">棋盤行數：</label>
+            <input type="number" id="boardRows" min="3" max="15" value="3" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin: 0 10px; color: #666;">×</span>
+            <label for="boardCols">列數：</label>
+            <input type="number" id="boardCols" min="3" max="15" value="3" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(3-15)</span>
+        </div>
+        
+        <div class="size-selector">
+            <label for="flipRows">翻轉區域行數：</label>
+            <input type="number" id="flipRows" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin: 0 10px; color: #666;">×</span>
+            <label for="flipCols">列數：</label>
+            <input type="number" id="flipCols" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(1-5)</span>
+        </div>
+
+        <div class="size-selector">
+            <label for="maxValue">數字上限：</label>
+            <input type="number" id="maxValue" min="1" max="99" value="9" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(1-99)</span>
+        </div>
+
+        <div class="moves-counter">
+            移動次數：<span id="moveCount">0</span>
+        </div>
+
+        <div class="cube-scene">
+            <div id="cube" class="cube">
+                <div class="cube-face cube-face--front">
+                    <div id="board" class="board"></div>
+                </div>
+                <div class="cube-face cube-face--back">
+                    <div id="board-back" class="board"></div>
+                </div>
+                <div class="cube-face cube-face--right">
+                    <div id="board-right" class="board"></div>
+                </div>
+                <div class="cube-face cube-face--left">
+                    <div id="board-left" class="board"></div>
+                </div>
+                <div class="cube-face cube-face--top">
+                    <div id="board-top" class="board"></div>
+                </div>
+                <div class="cube-face cube-face--bottom">
+                    <div id="board-bottom" class="board"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="controls-grid">
+                <div class="control-section">
+                    <button onclick="newGame()">🔄 新遊戲</button>
+                    <button onclick="resetGame()">↩️ 重新開始</button>
+                    <button onclick="showHint()">💡 提示</button>
+                    <button onclick="exportToPNG()">📸 匯出PNG</button>
+                </div>
+                <div class="control-section">
+                    <button onclick="rotateCube('left')">⟲ 左轉</button>
+                    <button onclick="rotateCube('right')">⟳ 右轉</button>
+                    <button onclick="rotateCube('up')">⤴️ 上轉</button>
+                    <button onclick="rotateCube('down')">⤵️ 下轉</button>
+                </div>
+                <div class="control-section control-section--full">
+                    <button id="toggleSyncModeBtn" onclick="toggleSyncMode()">🔗 同步設定模式：關</button>
+                    <label for="groupSelect" style="font-weight:600;color:#2c3e50;align-self:center;">群組：</label>
+                    <select id="groupSelect" style="padding:8px 12px;border-radius:10px;border:2px solid rgba(102,126,234,0.3);background:rgba(255,255,255,0.9);min-width:140px;"></select>
+                    <input id="newGroupName" placeholder="新群組名稱" style="padding:8px 12px;border-radius:10px;border:2px solid rgba(102,126,234,0.3);background:rgba(255,255,255,0.9);min-width:140px;" />
+                    <button onclick="addGroup()">➕ 新增群組</button>
+                    <button onclick="deleteActiveGroup()">🗑️ 刪除群組</button>
+                    <button onclick="saveGroupsToStorage()">💾 儲存</button>
+                    <button onclick="exportGroupsToFile()">📤 匯出群組</button>
+                    <button onclick="document.getElementById('importGroupsFile').click()">📥 匯入群組</button>
+                    <input id="importGroupsFile" type="file" accept="application/json" style="display:none" />
+                </div>
+            </div>
+        </div>
+
+        <div id="victoryMessage" class="victory-message" style="display: none;">
+            🎉 恭喜！您成功完成了遊戲！🎉
+        </div>
+    </div>
+
+    <script>
+        let boardRows = 3;
+        let boardCols = 3;
+        let flipRows = 2;
+        let flipCols = 2;
+        let maxValue = 9;
+        // 每個面一個獨立棋盤
+        const faceIds = ['board','board-back','board-right','board-left','board-top','board-bottom'];
+        let boards = {}; // Map faceId -> 2D array
+        let moveCount = 0;
+        let wins = {}; // Map faceId -> boolean 勝利狀態
+        let lastActiveFace = 'board';
+        let syncMode = false; // 是否為同步設定模式
+        // 命名群組：可跨面、跨座標
+        // groups: Map<groupName, Set<memberKey>> 成員鍵格式: `${faceId}|${row},${col}`
+        const groups = new Map();
+        // groupValue: Map<groupName, number> 群組的顯示/實際值
+        const groupValue = new Map();
+        // activeGroup: 目前在同步設定模式下操作的群組名稱
+        let activeGroup = null;
+
+        // 初始化遊戲
+        function initGame() {
+            const inputRows = parseInt(document.getElementById('boardRows').value);
+            const inputCols = parseInt(document.getElementById('boardCols').value);
+            const inputFlipRows = parseInt(document.getElementById('flipRows').value);
+            const inputFlipCols = parseInt(document.getElementById('flipCols').value);
+            const inputMaxValue = parseInt(document.getElementById('maxValue').value);
+            
+            // 確保棋盤行數在合理範圍內
+            if (inputRows < 3) {
+                boardRows = 3;
+                document.getElementById('boardRows').value = 3;
+            } else if (inputRows > 15) {
+                boardRows = 15;
+                document.getElementById('boardRows').value = 15;
+            } else {
+                boardRows = inputRows;
+            }
+            
+            // 確保棋盤列數在合理範圍內
+            if (inputCols < 3) {
+                boardCols = 3;
+                document.getElementById('boardCols').value = 3;
+            } else if (inputCols > 15) {
+                boardCols = 15;
+                document.getElementById('boardCols').value = 15;
+            } else {
+                boardCols = inputCols;
+            }
+            
+            // 確保翻轉區域行數在合理範圍內
+            if (inputFlipRows < 1) {
+                flipRows = 1;
+                document.getElementById('flipRows').value = 1;
+            } else if (inputFlipRows > 5) {
+                flipRows = 5;
+                document.getElementById('flipRows').value = 5;
+            } else {
+                flipRows = inputFlipRows;
+            }
+            
+            // 確保翻轉區域列數在合理範圍內
+            if (inputFlipCols < 1) {
+                flipCols = 1;
+                document.getElementById('flipCols').value = 1;
+            } else if (inputFlipCols > 5) {
+                flipCols = 5;
+                document.getElementById('flipCols').value = 5;
+            } else {
+                flipCols = inputFlipCols;
+            }
+            
+            // 確保最大數值在合理範圍內
+            if (inputMaxValue < 1) {
+                maxValue = 1;
+                document.getElementById('maxValue').value = 1;
+            } else if (inputMaxValue > 99) {
+                maxValue = 99;
+                document.getElementById('maxValue').value = 99;
+            } else {
+                maxValue = inputMaxValue;
+            }
+            
+            moveCount = 0;
+            wins = {};
+            groups.clear();
+            groupValue.clear();
+            activeGroup = null;
+            // 為每個面建立獨立初始棋盤（數字樣式，左上角為 01）
+            boards = {};
+            for (const id of faceIds) {
+                const grid = new Array(boardRows);
+                for (let i = 0; i < boardRows; i++) {
+                    grid[i] = new Array(boardCols);
+                    for (let j = 0; j < boardCols; j++) {
+                        grid[i][j] = (i + j) % 2 === 0 ? 1 : 0;
+                    }
+                }
+                boards[id] = grid;
+            }
+            
+            renderBoard();
+            updateMoveCount();
+            document.getElementById('victoryMessage').style.display = 'none';
+        }
+
+        // 立方體旋轉
+        let cubeRotX = 0;
+        let cubeRotY = 0;
+        function applyCubeRotation() {
+            const cube = document.getElementById('cube');
+            if (!cube) return;
+            cube.style.transform = `rotateX(${cubeRotX}deg) rotateY(${cubeRotY}deg)`;
+        }
+
+        function rotateCube(dir) {
+            const step = 90;
+            if (dir === 'left') cubeRotY -= step;
+            if (dir === 'right') cubeRotY += step;
+            if (dir === 'up') cubeRotX += step;
+            if (dir === 'down') cubeRotX -= step;
+            applyCubeRotation();
+        }
+
+        // 渲染棋盤到指定容器
+        function renderBoardInto(elementId) {
+            const boardElement = document.getElementById(elementId);
+            if (!boardElement) return;
+            boardElement.style.gridTemplateColumns = `repeat(${boardCols}, 1fr)`;
+            boardElement.innerHTML = '';
+
+            for (let i = 0; i < boardRows; i++) {
+                for (let j = 0; j < boardCols; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    const memberKey = `${elementId}|${i},${j}`;
+                    const valueToShow = getDisplayValueForMember(memberKey, boards[elementId][i][j]);
+                    cell.textContent = valueToShow.toString().padStart(2, '0');
+                    const g = findFirstGroupContaining(memberKey);
+                    if (g) {
+                        cell.classList.add('synced');
+                        const colorIdx = groupColorIndex(g);
+                        cell.classList.add(`group-color-${colorIdx}`);
+                    }
+                    cell.addEventListener('click', () => handleCellClick(elementId, i, j));
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        function renderBoard() {
+            renderBoardInto('board');
+            renderBoardInto('board-back');
+            renderBoardInto('board-right');
+            renderBoardInto('board-left');
+            renderBoardInto('board-top');
+            renderBoardInto('board-bottom');
+        }
+
+        // 處理格子點擊
+        function handleCellClick(faceId, row, col) {
+            if (syncMode) {
+                toggleCellSync(faceId, row, col);
+                renderBoardInto(faceId);
+                return;
+            }
+            if (wins[faceId]) return;
+            lastActiveFace = faceId;
+
+            // 檢查是否可以形成指定大小的翻轉區域
+            if (row >= boardRows - flipRows + 1 || col >= boardCols - flipCols + 1) {
+                alert(`請選擇可以形成${flipRows}×${flipCols}區域的位置！`);
+                return;
+            }
+
+            // 翻轉指定大小的區域
+            flipSquare(faceId, row, col);
+            moveCount++;
+            updateMoveCount();
+            
+            // 檢查勝利條件
+            if (checkVictory(faceId)) {
+                wins[faceId] = true;
+                const vm = document.getElementById('victoryMessage');
+                vm.innerText = `🎉 恭喜！面「${faceId}」成功完成了遊戲！🎉`;
+                vm.style.display = 'block';
+            }
+        }
+
+        // 翻轉指定大小的區域
+        function flipSquare(faceId, startRow, startCol) {
+            const facesToRedraw = new Set();
+            for (let i = startRow; i < startRow + flipRows; i++) {
+                for (let j = startCol; j < startCol + flipCols; j++) {
+                    const memberKey = `${faceId}|${i},${j}`;
+                    const g = findFirstGroupContaining(memberKey);
+                    if (g) {
+                        const base = groupValue.has(g) ? groupValue.get(g) : boards[faceId][i][j];
+                        const newVal = (base + 1) % (maxValue + 1);
+                        groupValue.set(g, newVal);
+                        // 同步至該群組所有成員
+                        const set = groups.get(g);
+                        for (const mk of set.values()) {
+                            const { fid, r, c } = parseMemberKey(mk);
+                            boards[fid][r][c] = newVal;
+                            facesToRedraw.add(fid);
+                        }
+                    } else {
+                        boards[faceId][i][j] = (boards[faceId][i][j] + 1) % (maxValue + 1);
+                        facesToRedraw.add(faceId);
+                    }
+                }
+            }
+            for (const fid of facesToRedraw) renderBoardInto(fid);
+        }
+
+        // 檢查勝利條件
+        function checkVictory(faceId) {
+            const boardRef = boards[faceId];
+            // 目標：所有原本是00的格子變成01，所有原本是01的格子變成00
+            for (let i = 0; i < boardRows; i++) {
+                for (let j = 0; j < boardCols; j++) {
+                    const originalValue = (i + j) % 2 === 0 ? 1 : 0; // 原始棋盤樣式
+                    const expectedValue = originalValue === 0 ? 1 : 0; // 期望的勝利狀態
+                    if (boardRef[i][j] !== expectedValue) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // 更新移動次數
+        function updateMoveCount() {
+            document.getElementById('moveCount').textContent = moveCount;
+        }
+
+        // 新遊戲
+        function newGame() {
+            initGame();
+        }
+
+        // 重新開始
+        function resetGame() {
+            initGame();
+        }
+
+        // 顯示提示
+        function showHint() {
+            if (gameWon) return;
+            
+            // 簡單提示：告訴玩家目標
+            alert(`提示：\n1. 目標是讓所有原本是00的格子變成01\n2. 讓所有原本是01的格子變成00\n3. 點擊${flipRows}×${flipCols}的區域來改變數字\n4. 數字變化：0→1→2→...→${maxValue}→0`);
+        }
+
+        // 匯出PNG功能
+        function exportToPNG() {
+            try {
+                // 創建一個臨時的canvas元素
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 設定canvas大小（棋盤區域 + 邊距 + 標題區域）
+                const cellSize = 60; // 每個格子的大小
+                const padding = 30; // 邊距
+                const headerHeight = 80; // 標題區域高度
+                const boardWidth = boardCols * cellSize;
+                const boardHeight = boardRows * cellSize;
+                canvas.width = boardWidth + padding * 2;
+                canvas.height = boardHeight + padding * 2 + headerHeight;
+                
+                // 繪製背景漸層
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 繪製白色背景區域
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+                
+                // 繪製標題區域
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 24px Microsoft JhengHei, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🎮 棋盤翻轉遊戲', canvas.width / 2, 35);
+                
+                // 繪製遊戲信息
+                ctx.font = '16px Microsoft JhengHei, Arial, sans-serif';
+                ctx.fillStyle = '#666';
+                ctx.fillText(`棋盤大小: ${boardRows}×${boardCols}`, canvas.width / 2, 55);
+                ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                
+                // 計算棋盤位置（在標題下方）
+                const boardX = padding;
+                const boardY = padding + headerHeight;
+                
+                // 繪製棋盤陰影
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(boardX + 3, boardY + 3, boardWidth, boardHeight);
+                
+                // 繪製棋盤背景
+                ctx.fillStyle = '#333';
+                ctx.fillRect(boardX, boardY, boardWidth, boardHeight);
+                
+                // 繪製棋盤邊框
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boardX, boardY, boardWidth, boardHeight);
+                
+                // 繪製每個格子（使用最近互動的面的資料）
+                for (let i = 0; i < boardRows; i++) {
+                    for (let j = 0; j < boardCols; j++) {
+                        const x = boardX + j * cellSize;
+                        const y = boardY + i * cellSize;
+
+                        ctx.fillStyle = '#f8f8f8';
+                        ctx.fillRect(x, y, cellSize, cellSize);
+
+                        ctx.strokeStyle = '#666';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, cellSize, cellSize);
+
+                        ctx.fillStyle = '#2c3e50';
+                        ctx.font = 'bold 16px Microsoft JhengHei, Arial, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(boards[lastActiveFace][i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
+
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + cellSize, y);
+                        ctx.lineTo(x + cellSize, y + cellSize);
+                        ctx.stroke();
+                    }
+                }
+                
+                // 添加勝利狀態指示
+                if (wins[lastActiveFace]) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.font = 'bold 18px Microsoft JhengHei, Arial, sans-serif';
+                    ctx.fillText('🎉 勝利！', canvas.width / 2, canvas.height - 20);
+                }
+                
+                // 添加時間戳記
+                const now = new Date();
+                const timeString = now.toLocaleString('zh-TW');
+                ctx.fillStyle = '#999';
+                ctx.font = '12px Microsoft JhengHei, Arial, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(`生成時間: ${timeString}`, canvas.width - 15, canvas.height - 5);
+                
+                // 轉換為PNG並下載
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `棋盤翻轉遊戲_${lastActiveFace}_${boardRows}x${boardCols}_${flipRows}x${flipCols}_上限${maxValue}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 'image/png');
+                
+            } catch (error) {
+                alert('匯出PNG失敗：' + error.message);
+            }
+        }
+
+        // 棋盤行數改變時重新初始化
+        document.getElementById('boardRows').addEventListener('input', function() {
+            const rows = parseInt(this.value);
+            if (rows >= 3 && rows <= 15) {
+                initGame();
+            }
+        });
+
+        // 棋盤列數改變時重新初始化
+        document.getElementById('boardCols').addEventListener('input', function() {
+            const cols = parseInt(this.value);
+            if (cols >= 3 && cols <= 15) {
+                initGame();
+            }
+        });
+
+        // 翻轉區域行數改變時重新初始化
+        document.getElementById('flipRows').addEventListener('input', function() {
+            const rows = parseInt(this.value);
+            if (rows >= 1 && rows <= 5) {
+                initGame();
+            }
+        });
+
+        // 翻轉區域列數改變時重新初始化
+        document.getElementById('flipCols').addEventListener('input', function() {
+            const cols = parseInt(this.value);
+            if (cols >= 1 && cols <= 5) {
+                initGame();
+            }
+        });
+
+        // 最大數值改變時重新初始化
+        document.getElementById('maxValue').addEventListener('input', function() {
+            const maxVal = parseInt(this.value);
+            if (maxVal >= 1 && maxVal <= 99) {
+                initGame();
+            }
+        });
+
+        // ===== 群組管理與同步設定功能 =====
+        function toggleSyncMode() {
+            syncMode = !syncMode;
+            const btn = document.getElementById('toggleSyncModeBtn');
+            btn.textContent = syncMode ? '🔗 同步設定模式：開' : '🔗 同步設定模式：關';
+        }
+
+        // 切換單一 cell 的群組成員資格：加入/移除於 activeGroup
+        function toggleCellSync(faceId, row, col) {
+            if (!activeGroup) {
+                alert('請先於上方選擇或建立一個群組');
+                return;
+            }
+            const memberKey = `${faceId}|${row},${col}`;
+            let set = groups.get(activeGroup);
+            if (!set) {
+                set = new Set();
+                groups.set(activeGroup, set);
+            }
+            if (set.has(memberKey)) {
+                set.delete(memberKey);
+                if (set.size === 0) {
+                    groups.delete(activeGroup);
+                    groupValue.delete(activeGroup);
+                }
+            } else {
+                set.add(memberKey);
+                if (!groupValue.has(activeGroup)) {
+                    groupValue.set(activeGroup, boards[faceId][row][col]);
+                } else {
+                    const val = groupValue.get(activeGroup);
+                    boards[faceId][row][col] = val;
+                }
+            }
+        }
+
+        function isCellGrouped(memberKey) {
+            for (const [name, set] of groups.entries()) {
+                if (set.has(memberKey)) return true;
+            }
+            return false;
+        }
+
+        function findFirstGroupContaining(memberKey) {
+            for (const [name, set] of groups.entries()) {
+                if (set.has(memberKey)) return name;
+            }
+            return null;
+        }
+
+        function parseMemberKey(memberKey) {
+            const [fid, rc] = memberKey.split('|');
+            const [r, c] = rc.split(',').map(Number);
+            return { fid, r, c };
+        }
+
+        function getDisplayValueForMember(memberKey, fallback) {
+            const g = findFirstGroupContaining(memberKey);
+            if (!g) return fallback;
+            if (groupValue.has(g)) return groupValue.get(g);
+            return fallback;
+        }
+
+        // 根據群組名稱決定顏色索引（穩定哈希）
+        function groupColorIndex(groupName) {
+            let hash = 0;
+            for (let i = 0; i < groupName.length; i++) {
+                hash = ((hash << 5) - hash) + groupName.charCodeAt(i);
+                hash |= 0;
+            }
+            const paletteSize = 8;
+            return Math.abs(hash) % paletteSize;
+        }
+
+        // ===== 群組管理（UI 與儲存） =====
+        function refreshGroupSelect() {
+            const select = document.getElementById('groupSelect');
+            if (!select) return;
+            const current = activeGroup;
+            select.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '未選擇';
+            select.appendChild(placeholder);
+            for (const name of groups.keys()) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                if (name === current) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function addGroup() {
+            const input = document.getElementById('newGroupName');
+            const name = (input.value || '').trim();
+            if (!name) return;
+            if (groups.has(name)) {
+                alert('群組已存在');
+                return;
+            }
+            groups.set(name, new Set());
+            activeGroup = name;
+            refreshGroupSelect();
+            input.value = '';
+        }
+
+        function deleteActiveGroup() {
+            if (!activeGroup) return;
+            groups.delete(activeGroup);
+            groupValue.delete(activeGroup);
+            activeGroup = null;
+            refreshGroupSelect();
+            // 重新渲染所有面，移除高亮
+            for (const fid of ['board','board-back','board-right','board-left','board-top','board-bottom']) {
+                renderBoardInto(fid);
+            }
+        }
+
+        document.getElementById('groupSelect').addEventListener('change', function() {
+            activeGroup = this.value || null;
+        });
+
+        function saveGroupsToStorage() {
+            try {
+                const obj = {
+                    groups: [...groups.entries()].map(([name, set]) => [name, [...set.values()]]),
+                    groupValue: [...groupValue.entries()],
+                    activeGroup
+                };
+                localStorage.setItem('cubeGroups', JSON.stringify(obj));
+                alert('群組已儲存');
+            } catch (e) {
+                alert('儲存失敗: ' + e.message);
+            }
+        }
+
+        function loadGroupsFromStorage() {
+            try {
+                const txt = localStorage.getItem('cubeGroups');
+                if (!txt) return;
+                const obj = JSON.parse(txt);
+                groups.clear();
+                for (const [name, arr] of obj.groups || []) {
+                    groups.set(name, new Set(arr));
+                }
+                groupValue.clear();
+                for (const [name, val] of obj.groupValue || []) {
+                    groupValue.set(name, val);
+                }
+                activeGroup = obj.activeGroup || null;
+                refreshGroupSelect();
+            } catch (e) {
+                console.warn('載入群組失敗', e);
+            }
+        }
+
+        function exportGroupsToFile() {
+            try {
+                const payload = {
+                    groups: [...groups.entries()].map(([name, set]) => [name, [...set.values()]]),
+                    groupValue: [...groupValue.entries()],
+                    activeGroup
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cube_groups_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('匯出失敗: ' + e.message);
+            }
+        }
+
+        document.getElementById('importGroupsFile').addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const obj = JSON.parse(String(evt.target.result));
+                    groups.clear();
+                    for (const [name, arr] of obj.groups || []) {
+                        groups.set(name, new Set(arr));
+                    }
+                    groupValue.clear();
+                    for (const [name, val] of obj.groupValue || []) {
+                        groupValue.set(name, val);
+                    }
+                    activeGroup = obj.activeGroup || null;
+                    refreshGroupSelect();
+                    // 重新渲染所有面以套用群組顯示/顏色
+                    for (const fid of ['board','board-back','board-right','board-left','board-top','board-bottom']) {
+                        renderBoardInto(fid);
+                    }
+                    alert('群組已匯入');
+                } catch (e) {
+                    alert('匯入失敗: ' + e.message);
+                } finally {
+                    // 清空 input 以允許再次選擇同一檔案
+                    document.getElementById('importGroupsFile').value = '';
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 初始化遊戲
+        initGame();
+        // 載入既有群組資料（若有）並刷新 UI
+        loadGroupsFromStorage();
+        refreshGroupSelect();
+    </script>
+</body>
+</html>
+
