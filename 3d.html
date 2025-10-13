@@ -568,6 +568,38 @@
             width: 90%;
             height: 90%;
         }
+
+        /* === Face-specific color themes === */
+        .cube-face--front .cell {
+            background: linear-gradient(145deg, #e7f0ff, #cfe0ff);
+            color: #1f3b87;
+            border-color: rgba(31, 59, 135, 0.15);
+        }
+        .cube-face--back .cell {
+            background: linear-gradient(145deg, #e9f8ef, #cdeed8);
+            color: #1f6b3a;
+            border-color: rgba(31, 107, 58, 0.15);
+        }
+        .cube-face--right .cell {
+            background: linear-gradient(145deg, #fff1e5, #ffd9b8);
+            color: #8a4b06;
+            border-color: rgba(138, 75, 6, 0.15);
+        }
+        .cube-face--left .cell {
+            background: linear-gradient(145deg, #f3e8ff, #e1ccff);
+            color: #5b2d90;
+            border-color: rgba(91, 45, 144, 0.15);
+        }
+        .cube-face--top .cell {
+            background: linear-gradient(145deg, #e6fbfb, #c7f1f1);
+            color: #0f6666;
+            border-color: rgba(15, 102, 102, 0.15);
+        }
+        .cube-face--bottom .cell {
+            background: linear-gradient(145deg, #ffe8ea, #ffcdd2);
+            color: #7a1020;
+            border-color: rgba(122, 16, 32, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -651,9 +683,12 @@
         let flipRows = 2;
         let flipCols = 2;
         let maxValue = 9;
-        let board = [];
+        // 每個面一個獨立棋盤
+        const faceIds = ['board','board-back','board-right','board-left','board-top','board-bottom'];
+        let boards = {}; // Map faceId -> 2D array
         let moveCount = 0;
-        let gameWon = false;
+        let wins = {}; // Map faceId -> boolean 勝利狀態
+        let lastActiveFace = 'board';
 
         // 初始化遊戲
         function initGame() {
@@ -718,16 +753,19 @@
                 maxValue = inputMaxValue;
             }
             
-            board = [];
             moveCount = 0;
-            gameWon = false;
-            
-            // 創建初始棋盤（數字樣式，左上角為 01）
-            for (let i = 0; i < boardRows; i++) {
-                board[i] = [];
-                for (let j = 0; j < boardCols; j++) {
-                    board[i][j] = (i + j) % 2 === 0 ? 1 : 0;
+            wins = {};
+            // 為每個面建立獨立初始棋盤（數字樣式，左上角為 01）
+            boards = {};
+            for (const id of faceIds) {
+                const grid = new Array(boardRows);
+                for (let i = 0; i < boardRows; i++) {
+                    grid[i] = new Array(boardCols);
+                    for (let j = 0; j < boardCols; j++) {
+                        grid[i][j] = (i + j) % 2 === 0 ? 1 : 0;
+                    }
                 }
+                boards[id] = grid;
             }
             
             renderBoard();
@@ -766,8 +804,8 @@
                     cell.className = 'cell';
                     cell.dataset.row = i;
                     cell.dataset.col = j;
-                    cell.textContent = board[i][j].toString().padStart(2, '0');
-                    cell.addEventListener('click', () => handleCellClick(i, j));
+                    cell.textContent = boards[elementId][i][j].toString().padStart(2, '0');
+                    cell.addEventListener('click', () => handleCellClick(elementId, i, j));
                     boardElement.appendChild(cell);
                 }
             }
@@ -783,8 +821,9 @@
         }
 
         // 處理格子點擊
-        function handleCellClick(row, col) {
-            if (gameWon) return;
+        function handleCellClick(faceId, row, col) {
+            if (wins[faceId]) return;
+            lastActiveFace = faceId;
 
             // 檢查是否可以形成指定大小的翻轉區域
             if (row >= boardRows - flipRows + 1 || col >= boardCols - flipCols + 1) {
@@ -793,36 +832,39 @@
             }
 
             // 翻轉指定大小的區域
-            flipSquare(row, col);
+            flipSquare(faceId, row, col);
             moveCount++;
             updateMoveCount();
             
             // 檢查勝利條件
-            if (checkVictory()) {
-                gameWon = true;
-                document.getElementById('victoryMessage').style.display = 'block';
+            if (checkVictory(faceId)) {
+                wins[faceId] = true;
+                const vm = document.getElementById('victoryMessage');
+                vm.innerText = `🎉 恭喜！面「${faceId}」成功完成了遊戲！🎉`;
+                vm.style.display = 'block';
             }
         }
 
         // 翻轉指定大小的區域
-        function flipSquare(startRow, startCol) {
+        function flipSquare(faceId, startRow, startCol) {
+            const boardRef = boards[faceId];
             for (let i = startRow; i < startRow + flipRows; i++) {
                 for (let j = startCol; j < startCol + flipCols; j++) {
-                    // 數字變化：0→1→2→...→maxValue→0
-                    board[i][j] = (board[i][j] + 1) % (maxValue + 1);
+                    boardRef[i][j] = (boardRef[i][j] + 1) % (maxValue + 1);
                 }
             }
-            renderBoard();
+            renderBoardInto(faceId);
         }
 
         // 檢查勝利條件
-        function checkVictory() {
+        function checkVictory(faceId) {
+            const boardRef = boards[faceId];
             // 目標：所有原本是00的格子變成01，所有原本是01的格子變成00
             for (let i = 0; i < boardRows; i++) {
                 for (let j = 0; j < boardCols; j++) {
                     const originalValue = (i + j) % 2 === 0 ? 1 : 0; // 原始棋盤樣式
                     const expectedValue = originalValue === 0 ? 1 : 0; // 期望的勝利狀態
-                    if (board[i][j] !== expectedValue) {
+                    if (boardRef[i][j] !== expectedValue) {
                         return false;
                     }
                 }
@@ -909,7 +951,7 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(boardX, boardY, boardWidth, boardHeight);
                 
-                // 繪製每個格子（使用目前的面資料）
+                // 繪製每個格子（使用最近互動的面的資料）
                 for (let i = 0; i < boardRows; i++) {
                     for (let j = 0; j < boardCols; j++) {
                         const x = boardX + j * cellSize;
@@ -926,7 +968,7 @@
                         ctx.font = 'bold 16px Microsoft JhengHei, Arial, sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(board[i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
+                        ctx.fillText(boards[lastActiveFace][i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
 
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
                         ctx.lineWidth = 0.5;
@@ -939,7 +981,7 @@
                 }
                 
                 // 添加勝利狀態指示
-                if (gameWon) {
+                if (wins[lastActiveFace]) {
                     ctx.fillStyle = '#4CAF50';
                     ctx.font = 'bold 18px Microsoft JhengHei, Arial, sans-serif';
                     ctx.fillText('🎉 勝利！', canvas.width / 2, canvas.height - 20);
@@ -958,7 +1000,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `棋盤翻轉遊戲_${boardRows}x${boardCols}_${flipRows}x${flipCols}_上限${maxValue}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+                    a.download = `棋盤翻轉遊戲_${lastActiveFace}_${boardRows}x${boardCols}_${flipRows}x${flipCols}_上限${maxValue}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
