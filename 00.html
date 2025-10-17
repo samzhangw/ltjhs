@@ -1006,11 +1006,19 @@
                 const ctx = canvas.getContext('2d');
                 
                 // 設定canvas大小（棋盤區域 + 邊距 + 標題區域）
-                const cellSize = 60; // 每個格子的大小
                 const padding = 30; // 邊距
                 const headerHeight = 80; // 標題區域高度
-                const boardWidth = boardCols * cellSize;
-                const boardHeight = boardRows * cellSize;
+                const cellSize = 60; // 矩形格子大小 or 三角邊長
+                let boardWidth, boardHeight;
+                if (useTriangular) {
+                    const side = cellSize;
+                    const h = Math.sqrt(3) * side / 2;
+                    boardWidth = levels * side;
+                    boardHeight = levels * h;
+                } else {
+                    boardWidth = boardCols * cellSize;
+                    boardHeight = boardRows * cellSize;
+                }
                 canvas.width = boardWidth + padding * 2;
                 canvas.height = boardHeight + padding * 2 + headerHeight;
                 
@@ -1034,8 +1042,13 @@
                 // 繪製遊戲信息
                 ctx.font = '16px Microsoft JhengHei, Arial, sans-serif';
                 ctx.fillStyle = '#666';
-                ctx.fillText(`棋盤大小: ${boardRows}×${boardCols}`, canvas.width / 2, 55);
-                ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                if (useTriangular) {
+                    ctx.fillText(`模式: 三角棋盤 | 層數: ${levels}`, canvas.width / 2, 55);
+                    ctx.fillText(`數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                } else {
+                    ctx.fillText(`棋盤大小: ${boardRows}×${boardCols}`, canvas.width / 2, 55);
+                    ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                }
                 
                 // 計算棋盤位置（在標題下方）
                 const boardX = padding;
@@ -1045,47 +1058,64 @@
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
                 ctx.fillRect(boardX + 3, boardY + 3, boardWidth, boardHeight);
                 
-                // 繪製棋盤背景
+                // 繪製棋盤背景與內容
                 ctx.fillStyle = '#333';
                 ctx.fillRect(boardX, boardY, boardWidth, boardHeight);
-                
-                // 繪製棋盤邊框
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(boardX, boardY, boardWidth, boardHeight);
-                
-                // 繪製每個格子
-                for (let i = 0; i < boardRows; i++) {
-                    for (let j = 0; j < boardCols; j++) {
-                        const x = boardX + j * cellSize;
-                        const y = boardY + i * cellSize;
-                        
-                        // 設定格子顏色（統一的淺色背景）
-                        ctx.fillStyle = '#f8f8f8';
-                        
-                        // 繪製格子
-                        ctx.fillRect(x, y, cellSize, cellSize);
-                        
-                        // 繪製格子邊框
-                        ctx.strokeStyle = '#666';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(x, y, cellSize, cellSize);
-                        
-                        // 繪製數字
+
+                if (useTriangular) {
+                    // 三角棋盤：依 triangles 畫 polygon 與數字
+                    for (const t of triangles) {
+                        // 解析點座標
+                        const pts = t.points.split(' ').map(p => p.split(',').map(Number));
+                        if (pts.length >= 3) {
+                            ctx.beginPath();
+                            ctx.moveTo(boardX + pts[0][0], boardY + pts[0][1]);
+                            for (let i = 1; i < pts.length; i++) {
+                                ctx.lineTo(boardX + pts[i][0], boardY + pts[i][1]);
+                            }
+                            ctx.closePath();
+                            // 面
+                            ctx.fillStyle = '#f8f8f8';
+                            ctx.fill();
+                            // 邊
+                            ctx.strokeStyle = '#666';
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                        // 數字
                         ctx.fillStyle = '#2c3e50';
-                        ctx.font = 'bold 16px Microsoft JhengHei, Arial, sans-serif';
+                        ctx.font = 'bold 14px Microsoft JhengHei, Arial, sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(board[i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
-                        
-                        // 添加格子高光效果
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + cellSize, y);
-                        ctx.lineTo(x + cellSize, y + cellSize);
-                        ctx.stroke();
+                        ctx.fillText(t.value.toString().padStart(2, '0'), boardX + t.cx, boardY + t.cy);
+                    }
+                } else {
+                    // 矩形棋盤
+                    for (let i = 0; i < boardRows; i++) {
+                        for (let j = 0; j < boardCols; j++) {
+                            const x = boardX + j * cellSize;
+                            const y = boardY + i * cellSize;
+                            ctx.fillStyle = '#f8f8f8';
+                            ctx.fillRect(x, y, cellSize, cellSize);
+                            ctx.strokeStyle = '#666';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(x, y, cellSize, cellSize);
+                            ctx.fillStyle = '#2c3e50';
+                            ctx.font = 'bold 16px Microsoft JhengHei, Arial, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(board[i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                            ctx.lineWidth = 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x + cellSize, y);
+                            ctx.lineTo(x + cellSize, y + cellSize);
+                            ctx.stroke();
+                        }
                     }
                 }
                 
