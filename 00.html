@@ -527,6 +527,43 @@
         body.dark .game-info { color: #e5e7eb; }
         body.dark .cell { color: #e5e7eb; background: linear-gradient(135deg, #111827, #0b1020); }
         body.dark .board { background: linear-gradient(135deg, #111827, #0b1020); }
+
+        /* 美化控制卡片與欄位 */
+        .size-selector {
+            margin: 10px 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        body.dark .section-title { color: #e5e7eb; }
+        .field-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px 10px;
+            margin-top: 6px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(102,126,234,0.12);
+            color: #5865f2;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        body.dark .badge { background: rgba(88,101,242,0.15); color: #a5b4fc; }
+        .size-selector label { color: inherit; font-weight: 700; }
+        .size-selector input[type="number"] { min-width: 90px; }
     </style>
 </head>
 <body>
@@ -545,36 +582,48 @@
         
         <div class="control-grid">
         <div class="size-selector">
+            <div class="section-title">三角棋盤</div>
+            <div class="field-row">
             <label style="margin-right: 12px; display:inline-flex; align-items:center; gap:8px;">
                 <input type="checkbox" id="triMode" checked>
                 使用三角棋盤
             </label>
             <label for="levels">層數：</label>
             <input type="number" id="levels" min="2" max="10" value="3" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(2-10)</span>
+            <span class="badge">(2-10)</span>
+            </div>
         </div>
         <div class="size-selector">
+            <div class="section-title">棋盤尺寸</div>
+            <div class="field-row">
             <label for="boardRows">棋盤行數：</label>
             <input type="number" id="boardRows" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin: 0 10px; color: #666;">×</span>
+            <span>×</span>
             <label for="boardCols">列數：</label>
             <input type="number" id="boardCols" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(3-15)</span>
+            <span class="badge">(3-15)</span>
+            </div>
         </div>
 
         <div class="size-selector">
+            <div class="section-title">翻轉區域</div>
+            <div class="field-row">
             <label for="flipRows">翻轉區域行數：</label>
             <input type="number" id="flipRows" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin: 0 10px; color: #666;">×</span>
+            <span>×</span>
             <label for="flipCols">列數：</label>
             <input type="number" id="flipCols" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(1-5)</span>
+            <span class="badge">(1-5)</span>
+            </div>
         </div>
 
         <div class="size-selector">
+            <div class="section-title">數字上限</div>
+            <div class="field-row">
             <label for="maxValue">數字上限：</label>
             <input type="number" id="maxValue" min="1" max="99" value="9" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(1-99)</span>
+            <span class="badge">(1-99)</span>
+            </div>
         </div>
         </div>
 
