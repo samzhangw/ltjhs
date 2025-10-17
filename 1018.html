@@ -92,6 +92,14 @@
             z-index: 1;
         }
 
+        .subtitle {
+            margin-top: -8px;
+            margin-bottom: 18px;
+            color: #6b7280;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
         @keyframes gradientShift {
             0%, 100% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -199,10 +207,11 @@
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
         }
         .tri-text {
-            font: 600 12px 'Microsoft JhengHei', Arial, sans-serif;
+            font: 700 12px 'JetBrains Mono', 'Cascadia Code', Consolas, 'Microsoft JhengHei', Arial, sans-serif;
             fill: #2c3e50;
             text-shadow: 0 1px 2px rgba(255,255,255,0.8);
             pointer-events: none;
+            letter-spacing: 0.5px;
         }
 
         .cell::before {
@@ -255,10 +264,9 @@
 
         .controls {
             margin-top: 20px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
         }
 
         @media (max-width: 768px) {
@@ -275,7 +283,7 @@
             background-size: 200% 200%;
             color: white;
             border: none;
-            padding: 14px 28px;
+            padding: 14px 20px;
             border-radius: 30px;
             cursor: pointer;
             font-size: 1em;
@@ -286,6 +294,7 @@
                 0 0 0 1px rgba(255,255,255,0.1);
             position: relative;
             overflow: hidden;
+            width: 100%;
         }
 
         button::before {
@@ -316,13 +325,8 @@
         }
 
         @media (max-width: 768px) {
-            button {
-                padding: 10px 20px;
-                font-size: 0.9em;
-                width: 100%;
-                max-width: 200px;
-                margin: 2px 0;
-            }
+            .controls { grid-template-columns: 1fr; }
+            button { padding: 12px 18px; font-size: 0.95em; }
         }
 
         .size-selector {
@@ -462,6 +466,9 @@
             backdrop-filter: blur(5px);
             position: relative;
             overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .moves-counter::before {
@@ -487,46 +494,153 @@
                 font-size: 0.9em;
             }
         }
+
+        /* 分隔線 */
+        .divider {
+            height: 1px;
+            width: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+            margin: 6px 0 16px 0;
+            opacity: 0.7;
+        }
+        
+        /* 新增：頂部工具列、主題按鈕、雙欄控制面板與深色模式 */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .topbar-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+        .topbar-actions { display: flex; gap: 10px; }
+        .theme-toggle {
+            background: linear-gradient(135deg, #111827, #374151);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin: 10px 0 5px 0;
+        }
+        @media (max-width: 768px) { .control-grid { grid-template-columns: 1fr; } }
+        
+        /* 簡易深色模式 */
+        body.dark { background: linear-gradient(135deg, #1f2937 0%, #0f172a 100%); }
+        body.dark .game-container { background: rgba(17,24,39,0.92); border-color: rgba(255,255,255,0.06); }
+        body.dark .game-info { color: #e5e7eb; }
+        body.dark .cell { color: #e5e7eb; background: linear-gradient(135deg, #111827, #0b1020); }
+        body.dark .board { background: linear-gradient(135deg, #111827, #0b1020); }
+
+        /* 美化控制卡片與欄位 */
+        .size-selector {
+            margin: 10px 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        body.dark .section-title { color: #e5e7eb; }
+        .field-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px 10px;
+            margin-top: 6px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(102,126,234,0.12);
+            color: #5865f2;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        body.dark .badge { background: rgba(88,101,242,0.15); color: #a5b4fc; }
+        .size-selector label { color: inherit; font-weight: 700; }
+        .size-selector input[type="number"] { min-width: 90px; }
     </style>
 </head>
 <body>
     <div class="game-container">
+        <div class="topbar">
+            <div class="topbar-title">
+                <span>🎲</span>
+                <span>翻轉數字</span>
+            </div>
+        </div>
         <h1>🎮 棋盤翻轉數字遊戲</h1>
         <div class="game-info">
             點擊自訂大小的區域來改變數字<br>
             目標：讓所有00變成01，所有01變成00！
         </div>
         
+        <div class="control-grid">
         <div class="size-selector">
+            <div class="section-title">三角棋盤</div>
+            <div class="field-row">
             <label style="margin-right: 12px; display:inline-flex; align-items:center; gap:8px;">
                 <input type="checkbox" id="triMode" checked>
                 使用三角棋盤
             </label>
             <label for="levels">層數：</label>
             <input type="number" id="levels" min="2" max="10" value="3" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(2-10)</span>
+            <span class="badge">(2-10)</span>
+            </div>
         </div>
+        <div class="size-selector">
+            <div class="section-title">棋盤尺寸</div>
+            <div class="field-row">
             <label for="boardRows">棋盤行數：</label>
             <input type="number" id="boardRows" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin: 0 10px; color: #666;">×</span>
+            <span>×</span>
             <label for="boardCols">列數：</label>
             <input type="number" id="boardCols" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(3-15)</span>
-        </div>
-        
-        <div class="size-selector">
-            <label for="flipRows">翻轉區域行數：</label>
-            <input type="number" id="flipRows" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin: 0 10px; color: #666;">×</span>
-            <label for="flipCols">列數：</label>
-            <input type="number" id="flipCols" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(1-5)</span>
+            <span class="badge">(3-15)</span>
+            </div>
         </div>
 
         <div class="size-selector">
+            <div class="section-title">翻轉區域</div>
+            <div class="field-row">
+            <label for="flipRows">翻轉區域行數：</label>
+            <input type="number" id="flipRows" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span>×</span>
+            <label for="flipCols">列數：</label>
+            <input type="number" id="flipCols" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span class="badge">(1-5)</span>
+            </div>
+        </div>
+
+        <div class="size-selector">
+            <div class="section-title">數字上限</div>
+            <div class="field-row">
             <label for="maxValue">數字上限：</label>
             <input type="number" id="maxValue" min="1" max="99" value="9" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
-            <span style="margin-left: 10px; color: #666;">(1-99)</span>
+            <span class="badge">(1-99)</span>
+            </div>
+        </div>
         </div>
 
         <div class="moves-counter">
@@ -554,11 +668,14 @@
         let flipCols = 2;  // 矩形棋盤用
         let maxValue = 9;
         let board = [];    // 矩形棋盤 2D 陣列
-        let triangles = []; // 三角棋盤 單元陣列
+        let triangles = []; // 三角/圓 金字塔單元陣列
         let useTriangular = true;
         let levels = 3;    // 三角棋盤層數
+        let circleMode = true; // 使用圓形金字塔
         let moveCount = 0;
         let gameWon = false;
+        
+        // 已移除主題切換功能
 
         // 初始化遊戲
         function initGame() {
@@ -642,56 +759,27 @@
                     levels = inputLevels;
                 }
 
-                // 三角網格：第 r 層有 (2r-1) 個小三角，偶數索引為倒三角，奇數為正三角（或反之）
-                // 幾何尺寸（小三角的邊長）
-                const unitSide = 60; // 小三角邊長
-                const unitH = Math.sqrt(3) * unitSide / 2; // 小三角高
+                // 圓形金字塔：第 r 層有 r 個圓（1,2,3,...）
+                circleMode = true;
+                const unitSide = 60; // 水平間距基準
+                const unitH = Math.sqrt(3) * unitSide / 2; // 垂直間距
                 let id = 0;
                 for (let r = 1; r <= levels; r++) {
-                    const count = 2 * r - 1;
-                    const startX = (levels - r) * (unitSide / 2); // 以半邊長為單位置中
-                    const yTop = (r - 1) * unitH;          // 該層頂線 y
+                    const count = r; // 每層 r 個
+                    const startX = (levels - r) * (unitSide / 2); // 左側起點，置中
+                    const yTop = (r - 1) * unitH;                 // 該層頂線 y
                     for (let k = 0; k < count; k++) {
-                        const x = startX + k * (unitSide / 2);
-                        if (k % 2 === 0) {
-                            // 正三角（朝上）
-                            const ax = x;
-                            const ay = yTop + unitH;
-                            const bx = x + unitSide / 2;
-                            const by = yTop;
-                            const cx = x + unitSide;
-                            const cy = yTop + unitH;
-                            triangles.push({
-                                id: id++,
-                                orientation: 'up',
-                                points: `${ax},${ay} ${bx},${by} ${cx},${cy}`,
-                                cx: (ax + bx + cx) / 3,
-                                cy: (ay + by + cy) / 3,
-                                original: 1,
-                                value: 1,
-                                row: r,
-                                index: k
-                            });
-                        } else {
-                            // 倒三角（朝下）
-                            const ax = x;
-                            const ay = yTop;
-                            const bx = x + unitSide;
-                            const by = yTop;
-                            const cx = x + unitSide / 2;
-                            const cy = yTop + unitH;
-                            triangles.push({
-                                id: id++,
-                                orientation: 'down',
-                                points: `${ax},${ay} ${bx},${by} ${cx},${cy}`,
-                                cx: (ax + bx + cx) / 3,
-                                cy: (ay + by + cy) / 3,
-                                original: 0,
-                                value: 0,
-                                row: r,
-                                index: k
-                            });
-                        }
+                        const cx = startX + k * unitSide + unitSide / 2;
+                        const cy = yTop + unitH;
+                        triangles.push({
+                            id: id++,
+                            cx,
+                            cy,
+                            original: (r + k) % 2 === 0 ? 1 : 0,
+                            value: 0,
+                            row: r,
+                            index: k
+                        });
                     }
                 }
             } else {
@@ -715,14 +803,17 @@
             boardElement.innerHTML = '';
             if (useTriangular) {
                 boardElement.classList.add('triangular');
-                // 計算 SVG 尺寸
+                // 計算 SVG 尺寸（圓形金字塔）
                 const side = 60;
                 const h = Math.sqrt(3) * side / 2;
+                // 寬度：最底層有 levels 個圓，間距 side
                 const width = levels * side;
-                const height = levels * h;
+                // 高度：levels 層，每層高 h，加上圓的半徑邊距
+                const radius = side * 0.28;
+                const height = levels * h + radius * 2;
                 // 定義漸層 + 圖形
                 const svgParts = [];
-                svgParts.push(`<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">`);
+                svgParts.push(`<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" style="min-height: 200px;">`);
                 svgParts.push(`<defs>
                     <linearGradient id="triCellGrad" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#f8f9fa" />
@@ -732,7 +823,7 @@
                 // 外框陰影板
                 svgParts.push(`<g>`);
                 for (const t of triangles) {
-                    svgParts.push(`<polygon class="tri-shape" data-id="${t.id}" points="${t.points}" />`);
+                    svgParts.push(`<circle class="tri-shape" data-id="${t.id}" cx="${t.cx}" cy="${t.cy}" r="${radius}" />`);
                 }
                 for (const t of triangles) {
                     svgParts.push(`<text class="tri-text" x="${t.cx}" y="${t.cy}" text-anchor="middle" dominant-baseline="middle">${t.value.toString().padStart(2,'0')}</text>`);
@@ -791,29 +882,16 @@
             const t = triangles.find(x => x.id === id);
             if (!t) return;
 
-            // 只接受點擊正三角形
-            if (t.orientation !== 'up') return;
-
-            // 找到要影響的三角形：
-            // 1) 自己（正三）
-            // 2) 正下方倒三：位於下一層，index+1
-            // 3) 倒三左、右相鄰的正三：分別是 index 與 index+2
-            const affected = [];
-            affected.push(t);
-            const down = triangles.find(x => x.row === t.row + 1 && x.index === t.index + 1 && x.orientation === 'down');
-            const leftUp = down ? triangles.find(x => x.row === down.row && x.index === down.index - 1 && x.orientation === 'up') : null;
-            const rightUp = down ? triangles.find(x => x.row === down.row && x.index === down.index + 1 && x.orientation === 'up') : null;
-
-            // 驗證是否可成立（需同時存在：正下方倒三角、其左右兩個正三角）
-            if (!down || !leftUp || !rightUp) {
-                alert('此位置無法成立，請點擊可成立的位置（需存在正下方倒三與其左右正三）。');
+            // 圓形金字塔：點擊任一圓，與其下一層左右相鄰兩個圓一同 +1
+            const affected = [t];
+            const downLeft = triangles.find(x => x.row === t.row + 1 && x.index === t.index);
+            const downRight = triangles.find(x => x.row === t.row + 1 && x.index === t.index + 1);
+            if (!downLeft || !downRight) {
+                alert('此位置無法成立，請點擊非最底層的可成立位置。');
                 return;
             }
-
-            affected.push(down, leftUp, rightUp);
-            for (const tri of affected) {
-                tri.value = (tri.value + 1) % (maxValue + 1);
-            }
+            affected.push(downLeft, downRight);
+            for (const tri of affected) tri.value = (tri.value + 1) % (maxValue + 1);
 
             moveCount++;
             renderBoard();
@@ -890,11 +968,19 @@
                 const ctx = canvas.getContext('2d');
                 
                 // 設定canvas大小（棋盤區域 + 邊距 + 標題區域）
-                const cellSize = 60; // 每個格子的大小
                 const padding = 30; // 邊距
                 const headerHeight = 80; // 標題區域高度
-                const boardWidth = boardCols * cellSize;
-                const boardHeight = boardRows * cellSize;
+                const cellSize = 60; // 矩形格子大小 or 三角邊長
+                let boardWidth, boardHeight;
+                if (useTriangular) {
+                    const side = cellSize;
+                    const h = Math.sqrt(3) * side / 2;
+                    boardWidth = levels * side;
+                    boardHeight = levels * h;
+                } else {
+                    boardWidth = boardCols * cellSize;
+                    boardHeight = boardRows * cellSize;
+                }
                 canvas.width = boardWidth + padding * 2;
                 canvas.height = boardHeight + padding * 2 + headerHeight;
                 
@@ -918,8 +1004,13 @@
                 // 繪製遊戲信息
                 ctx.font = '16px Microsoft JhengHei, Arial, sans-serif';
                 ctx.fillStyle = '#666';
-                ctx.fillText(`棋盤大小: ${boardRows}×${boardCols}`, canvas.width / 2, 55);
-                ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                if (useTriangular) {
+                    ctx.fillText(`模式: 三角棋盤 | 層數: ${levels}`, canvas.width / 2, 55);
+                    ctx.fillText(`數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                } else {
+                    ctx.fillText(`棋盤大小: ${boardRows}×${boardCols}`, canvas.width / 2, 55);
+                    ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                }
                 
                 // 計算棋盤位置（在標題下方）
                 const boardX = padding;
@@ -929,47 +1020,55 @@
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
                 ctx.fillRect(boardX + 3, boardY + 3, boardWidth, boardHeight);
                 
-                // 繪製棋盤背景
+                // 繪製棋盤背景與內容
                 ctx.fillStyle = '#333';
                 ctx.fillRect(boardX, boardY, boardWidth, boardHeight);
-                
-                // 繪製棋盤邊框
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(boardX, boardY, boardWidth, boardHeight);
-                
-                // 繪製每個格子
-                for (let i = 0; i < boardRows; i++) {
-                    for (let j = 0; j < boardCols; j++) {
-                        const x = boardX + j * cellSize;
-                        const y = boardY + i * cellSize;
-                        
-                        // 設定格子顏色（統一的淺色背景）
+
+                if (useTriangular) {
+                    // 圓形金字塔：以 triangles 的中心作為圓心
+                    const radius = cellSize * 0.28;
+                    for (const t of triangles) {
+                        ctx.beginPath();
+                        ctx.arc(boardX + t.cx, boardY + t.cy, radius, 0, Math.PI * 2);
+                        ctx.closePath();
                         ctx.fillStyle = '#f8f8f8';
-                        
-                        // 繪製格子
-                        ctx.fillRect(x, y, cellSize, cellSize);
-                        
-                        // 繪製格子邊框
+                        ctx.fill();
                         ctx.strokeStyle = '#666';
                         ctx.lineWidth = 1;
-                        ctx.strokeRect(x, y, cellSize, cellSize);
-                        
-                        // 繪製數字
+                        ctx.stroke();
                         ctx.fillStyle = '#2c3e50';
-                        ctx.font = 'bold 16px Microsoft JhengHei, Arial, sans-serif';
+                        ctx.font = 'bold 14px Microsoft JhengHei, Arial, sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(board[i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
-                        
-                        // 添加格子高光效果
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + cellSize, y);
-                        ctx.lineTo(x + cellSize, y + cellSize);
-                        ctx.stroke();
+                        ctx.fillText(t.value.toString().padStart(2, '0'), boardX + t.cx, boardY + t.cy);
+                    }
+                } else {
+                    // 矩形棋盤
+                    for (let i = 0; i < boardRows; i++) {
+                        for (let j = 0; j < boardCols; j++) {
+                            const x = boardX + j * cellSize;
+                            const y = boardY + i * cellSize;
+                            ctx.fillStyle = '#f8f8f8';
+                            ctx.fillRect(x, y, cellSize, cellSize);
+                            ctx.strokeStyle = '#666';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(x, y, cellSize, cellSize);
+                            ctx.fillStyle = '#2c3e50';
+                            ctx.font = 'bold 16px Microsoft JhengHei, Arial, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(board[i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                            ctx.lineWidth = 0.5;
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x + cellSize, y);
+                            ctx.lineTo(x + cellSize, y + cellSize);
+                            ctx.stroke();
+                        }
                     }
                 }
                 
