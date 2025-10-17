@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>棋盤翻轉數字遊戲</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 
+                0 25px 50px rgba(0,0,0,0.15),
+                0 0 0 1px rgba(255,255,255,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            text-align: center;
+            max-width: 650px;
+            width: 100%;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-radius: 25px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+                border-radius: 15px;
+                margin: 5px;
+            }
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
+            font-size: 2.8em;
+            font-weight: 800;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            animation: gradientShift 3s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 15px;
+            }
+        }
+
+        .game-info {
+            margin-bottom: 25px;
+            color: #555;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 15px;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .game-info {
+                font-size: 1em;
+                margin-bottom: 15px;
+            }
+        }
+
+        .board {
+            display: grid;
+            gap: 3px;
+            margin: 25px auto;
+            border: 3px solid #2c3e50;
+            border-radius: 15px;
+            padding: 8px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            box-shadow: 
+                0 10px 25px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        /* 三角棋盤（SVG）模式 */
+        .board.triangular {
+            display: block;
+        }
+
+        .board::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 17px;
+            z-index: -1;
+        }
+
+        @media (max-width: 768px) {
+            .board {
+                margin: 15px auto;
+                gap: 1px;
+                border: 2px solid #333;
+                padding: 3px;
+            }
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            min-width: 30px;
+            min-height: 30px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* 三角單元（SVG polygon）基礎樣式 */
+        .tri-shape {
+            fill: url(#triCellGrad);
+            stroke: rgba(255,255,255,0.35);
+            stroke-width: 1;
+            cursor: pointer;
+            transition: transform 0.25s ease, filter 0.25s ease;
+        }
+        .tri-shape:hover {
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+        }
+        .tri-text {
+            font: 600 12px 'Microsoft JhengHei', Arial, sans-serif;
+            fill: #2c3e50;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+            pointer-events: none;
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .cell:hover {
+            transform: scale(1.08) translateY(-2px);
+            z-index: 10;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.15),
+                0 0 0 1px rgba(255,255,255,0.2);
+        }
+
+        .cell:hover::before {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .cell {
+                min-width: 25px;
+                min-height: 25px;
+                border: 0.5px solid #666;
+            }
+            
+            .cell:hover {
+                transform: scale(1.05);
+            }
+        }
+
+        .cell {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2c3e50;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                margin-top: 15px;
+                gap: 8px;
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            background-size: 200% 200%;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 6px 20px rgba(102, 126, 234, 0.3),
+                0 0 0 1px rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 10px 30px rgba(102, 126, 234, 0.4),
+                0 0 0 1px rgba(255,255,255,0.2);
+            background-position: 100% 0;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:active {
+            transform: translateY(-1px) scale(1.01);
+        }
+
+        @media (max-width: 768px) {
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+                width: 100%;
+                max-width: 200px;
+                margin: 2px 0;
+            }
+        }
+
+        .size-selector {
+            margin: 20px 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(5px);
+            position: relative;
+        }
+
+        .size-selector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-radius: 20px;
+            pointer-events: none;
+        }
+
+        .size-selector label {
+            margin-right: 12px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.05em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .size-selector input {
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            font-size: 1em;
+            background: rgba(255,255,255,0.8);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .size-selector input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255,255,255,0.95);
+        }
+
+        @media (max-width: 768px) {
+            .size-selector {
+                margin: 10px 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .size-selector label {
+                margin-right: 0;
+                margin-bottom: 5px;
+                font-size: 0.9em;
+            }
+            
+            .size-selector input {
+                width: 100%;
+                max-width: 120px;
+                text-align: center;
+            }
+        }
+
+        .victory-message {
+            background: linear-gradient(135deg, #4CAF50, #45a049, #2E7D32);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-top: 25px;
+            font-size: 1.4em;
+            font-weight: 700;
+            animation: victoryPulse 1.5s ease-in-out infinite;
+            box-shadow: 
+                0 10px 30px rgba(76, 175, 80, 0.3),
+                0 0 0 1px rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .victory-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            border-radius: 20px;
+        }
+
+        @keyframes victoryPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 
+                    0 10px 30px rgba(76, 175, 80, 0.3),
+                    0 0 0 1px rgba(255,255,255,0.2);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 
+                    0 15px 40px rgba(76, 175, 80, 0.4),
+                    0 0 0 2px rgba(255,255,255,0.3);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .victory-message {
+                padding: 15px;
+                margin-top: 15px;
+                font-size: 1.1em;
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .moves-counter {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin: 15px 0;
+            font-weight: 600;
+            color: #2c3e50;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .moves-counter::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @media (max-width: 768px) {
+            .moves-counter {
+                padding: 8px 15px;
+                margin: 8px 0;
+                font-size: 0.9em;
+            }
+        }
+        
+        /* 新增：頂部工具列、主題按鈕、雙欄控制面板與深色模式 */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .topbar-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+        .topbar-actions { display: flex; gap: 10px; }
+        .theme-toggle {
+            background: linear-gradient(135deg, #111827, #374151);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin: 10px 0 5px 0;
+        }
+        @media (max-width: 768px) { .control-grid { grid-template-columns: 1fr; } }
+        
+        /* 簡易深色模式 */
+        body.dark { background: linear-gradient(135deg, #1f2937 0%, #0f172a 100%); }
+        body.dark .game-container { background: rgba(17,24,39,0.92); border-color: rgba(255,255,255,0.06); }
+        body.dark .game-info { color: #e5e7eb; }
+        body.dark .cell { color: #e5e7eb; background: linear-gradient(135deg, #111827, #0b1020); }
+        body.dark .board { background: linear-gradient(135deg, #111827, #0b1020); }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="topbar">
+            <div class="topbar-title">
+                <span>🎲</span>
+                <span>翻轉數字</span>
+            </div>
+            <div class="topbar-actions">
+                <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">切換主題</button>
+            </div>
+        </div>
+        <h1>🎮 棋盤翻轉數字遊戲</h1>
+        <div class="game-info">
+            點擊自訂大小的區域來改變數字<br>
+            目標：讓所有00變成01，所有01變成00！
+        </div>
+        
+        <div class="control-grid">
+        <div class="size-selector">
+            <label style="margin-right: 12px; display:inline-flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="triMode" checked>
+                使用三角棋盤
+            </label>
+            <label for="levels">層數：</label>
+            <input type="number" id="levels" min="2" max="10" value="3" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(2-10)</span>
+        </div>
+        <div class="size-selector">
+            <label for="boardRows">棋盤行數：</label>
+            <input type="number" id="boardRows" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin: 0 10px; color: #666;">×</span>
+            <label for="boardCols">列數：</label>
+            <input type="number" id="boardCols" min="3" max="15" value="4" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(3-15)</span>
+        </div>
+
+        <div class="size-selector">
+            <label for="flipRows">翻轉區域行數：</label>
+            <input type="number" id="flipRows" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin: 0 10px; color: #666;">×</span>
+            <label for="flipCols">列數：</label>
+            <input type="number" id="flipCols" min="1" max="5" value="2" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(1-5)</span>
+        </div>
+
+        <div class="size-selector">
+            <label for="maxValue">數字上限：</label>
+            <input type="number" id="maxValue" min="1" max="99" value="9" style="width: 80px; padding: 8px 12px; border-radius: 8px; border: 2px solid #ddd; font-size: 1em; text-align: center;">
+            <span style="margin-left: 10px; color: #666;">(1-99)</span>
+        </div>
+        </div>
+
+        <div class="moves-counter">
+            移動次數：<span id="moveCount">0</span>
+        </div>
+
+        <div id="board" class="board"></div>
+        
+        <div class="controls">
+            <button onclick="newGame()">🔄 新遊戲</button>
+            <button onclick="resetGame()">↩️ 重新開始</button>
+            <button onclick="showHint()">💡 提示</button>
+            <button onclick="exportToPNG()">📸 匯出PNG</button>
+        </div>
+
+        <div id="victoryMessage" class="victory-message" style="display: none;">
+            🎉 恭喜！您成功完成了遊戲！🎉
+        </div>
+    </div>
+
+    <script>
+        let boardRows = 4; // 矩形棋盤用
+        let boardCols = 4; // 矩形棋盤用
+        let flipRows = 2;  // 矩形棋盤用
+        let flipCols = 2;  // 矩形棋盤用
+        let maxValue = 9;
+        let board = [];    // 矩形棋盤 2D 陣列
+        let triangles = []; // 三角棋盤 單元陣列
+        let useTriangular = true;
+        let levels = 3;    // 三角棋盤層數
+        let moveCount = 0;
+        let gameWon = false;
+        
+        // 主題：儲存與切換
+        function applyStoredTheme() {
+            try {
+                const v = localStorage.getItem('theme');
+                if (v === 'dark') document.body.classList.add('dark');
+            } catch (e) {}
+        }
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            try { localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); } catch (e) {}
+        }
+
+        // 初始化遊戲
+        function initGame() {
+            applyStoredTheme();
+            const inputRows = parseInt(document.getElementById('boardRows').value);
+            const inputCols = parseInt(document.getElementById('boardCols').value);
+            const inputFlipRows = parseInt(document.getElementById('flipRows').value);
+            const inputFlipCols = parseInt(document.getElementById('flipCols').value);
+            const inputMaxValue = parseInt(document.getElementById('maxValue').value);
+            useTriangular = document.getElementById('triMode').checked;
+            const inputLevels = parseInt(document.getElementById('levels').value);
+            
+            // 確保棋盤行數在合理範圍內
+            if (inputRows < 3) {
+                boardRows = 3;
+                document.getElementById('boardRows').value = 3;
+            } else if (inputRows > 15) {
+                boardRows = 15;
+                document.getElementById('boardRows').value = 15;
+            } else {
+                boardRows = inputRows;
+            }
+            
+            // 確保棋盤列數在合理範圍內
+            if (inputCols < 3) {
+                boardCols = 3;
+                document.getElementById('boardCols').value = 3;
+            } else if (inputCols > 15) {
+                boardCols = 15;
+                document.getElementById('boardCols').value = 15;
+            } else {
+                boardCols = inputCols;
+            }
+            
+            // 確保翻轉區域行數在合理範圍內
+            if (inputFlipRows < 1) {
+                flipRows = 1;
+                document.getElementById('flipRows').value = 1;
+            } else if (inputFlipRows > 5) {
+                flipRows = 5;
+                document.getElementById('flipRows').value = 5;
+            } else {
+                flipRows = inputFlipRows;
+            }
+            
+            // 確保翻轉區域列數在合理範圍內
+            if (inputFlipCols < 1) {
+                flipCols = 1;
+                document.getElementById('flipCols').value = 1;
+            } else if (inputFlipCols > 5) {
+                flipCols = 5;
+                document.getElementById('flipCols').value = 5;
+            } else {
+                flipCols = inputFlipCols;
+            }
+            
+            // 確保最大數值在合理範圍內
+            if (inputMaxValue < 1) {
+                maxValue = 1;
+                document.getElementById('maxValue').value = 1;
+            } else if (inputMaxValue > 99) {
+                maxValue = 99;
+                document.getElementById('maxValue').value = 99;
+            } else {
+                maxValue = inputMaxValue;
+            }
+            
+            board = [];
+            triangles = [];
+            moveCount = 0;
+            gameWon = false;
+            
+            if (useTriangular) {
+                // 三角棋盤層數限制
+                if (isNaN(inputLevels) || inputLevels < 2) {
+                    levels = 2;
+                    document.getElementById('levels').value = 2;
+                } else if (inputLevels > 10) {
+                    levels = 10;
+                    document.getElementById('levels').value = 10;
+                } else {
+                    levels = inputLevels;
+                }
+
+                // 三角網格：第 r 層有 (2r-1) 個小三角，偶數索引為倒三角，奇數為正三角（或反之）
+                // 幾何尺寸（小三角的邊長）
+                const unitSide = 60; // 小三角邊長
+                const unitH = Math.sqrt(3) * unitSide / 2; // 小三角高
+                let id = 0;
+                for (let r = 1; r <= levels; r++) {
+                    const count = 2 * r - 1;
+                    const startX = (levels - r) * (unitSide / 2); // 以半邊長為單位置中
+                    const yTop = (r - 1) * unitH;          // 該層頂線 y
+                    for (let k = 0; k < count; k++) {
+                        const x = startX + k * (unitSide / 2);
+                        if (k % 2 === 0) {
+                            // 正三角（朝上）
+                            const ax = x;
+                            const ay = yTop + unitH;
+                            const bx = x + unitSide / 2;
+                            const by = yTop;
+                            const cx = x + unitSide;
+                            const cy = yTop + unitH;
+                            triangles.push({
+                                id: id++,
+                                orientation: 'up',
+                                points: `${ax},${ay} ${bx},${by} ${cx},${cy}`,
+                                cx: (ax + bx + cx) / 3,
+                                cy: (ay + by + cy) / 3,
+                                original: 1,
+                                value: 1,
+                                row: r,
+                                index: k
+                            });
+                        } else {
+                            // 倒三角（朝下）
+                            const ax = x;
+                            const ay = yTop;
+                            const bx = x + unitSide;
+                            const by = yTop;
+                            const cx = x + unitSide / 2;
+                            const cy = yTop + unitH;
+                            triangles.push({
+                                id: id++,
+                                orientation: 'down',
+                                points: `${ax},${ay} ${bx},${by} ${cx},${cy}`,
+                                cx: (ax + bx + cx) / 3,
+                                cy: (ay + by + cy) / 3,
+                                original: 0,
+                                value: 0,
+                                row: r,
+                                index: k
+                            });
+                        }
+                    }
+                }
+            } else {
+                // 矩形棋盤（原本邏輯）數字樣式，左上角為 01
+                for (let i = 0; i < boardRows; i++) {
+                    board[i] = [];
+                    for (let j = 0; j < boardCols; j++) {
+                        board[i][j] = (i + j) % 2 === 0 ? 1 : 0;
+                    }
+                }
+            }
+            
+            renderBoard();
+            updateMoveCount();
+            document.getElementById('victoryMessage').style.display = 'none';
+        }
+
+        // 渲染棋盤
+        function renderBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            if (useTriangular) {
+                boardElement.classList.add('triangular');
+                // 計算 SVG 尺寸
+                const side = 60;
+                const h = Math.sqrt(3) * side / 2;
+                const width = levels * side;
+                const height = levels * h;
+                // 定義漸層 + 圖形
+                const svgParts = [];
+                svgParts.push(`<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">`);
+                svgParts.push(`<defs>
+                    <linearGradient id="triCellGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#f8f9fa" />
+                        <stop offset="100%" stop-color="#e9ecef" />
+                    </linearGradient>
+                </defs>`);
+                // 外框陰影板
+                svgParts.push(`<g>`);
+                for (const t of triangles) {
+                    svgParts.push(`<polygon class="tri-shape" data-id="${t.id}" points="${t.points}" />`);
+                }
+                for (const t of triangles) {
+                    svgParts.push(`<text class="tri-text" x="${t.cx}" y="${t.cy}" text-anchor="middle" dominant-baseline="middle">${t.value.toString().padStart(2,'0')}</text>`);
+                }
+                svgParts.push(`</g></svg>`);
+                boardElement.innerHTML = svgParts.join('');
+                // 綁定事件
+                const svg = boardElement.querySelector('svg');
+                svg.addEventListener('click', (e) => {
+                    const target = e.target;
+                    if (target && target.classList && target.classList.contains('tri-shape')) {
+                        const id = parseInt(target.getAttribute('data-id'));
+                        handleTriangleClick(id);
+                    }
+                });
+            } else {
+                boardElement.classList.remove('triangular');
+                boardElement.style.gridTemplateColumns = `repeat(${boardCols}, 1fr)`;
+                for (let i = 0; i < boardRows; i++) {
+                    for (let j = 0; j < boardCols; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        cell.textContent = board[i][j].toString().padStart(2, '0');
+                        cell.addEventListener('click', () => handleCellClick(i, j));
+                        boardElement.appendChild(cell);
+                    }
+                }
+            }
+        }
+
+        // 處理格子點擊
+        function handleCellClick(row, col) {
+            if (gameWon) return;
+            if (useTriangular) return; // 三角模式不使用矩形翻轉
+            // 矩形模式
+            if (row >= boardRows - flipRows + 1 || col >= boardCols - flipCols + 1) {
+                alert(`請選擇可以形成${flipRows}×${flipCols}區域的位置！`);
+                return;
+            }
+            flipSquare(row, col);
+            moveCount++;
+            updateMoveCount();
+            
+            // 檢查勝利條件
+            if (checkVictory()) {
+                gameWon = true;
+                document.getElementById('victoryMessage').style.display = 'block';
+            }
+        }
+
+        // 三角模式：點擊單一三角形
+        function handleTriangleClick(id) {
+            if (gameWon) return;
+            const t = triangles.find(x => x.id === id);
+            if (!t) return;
+
+            // 只接受點擊正三角形
+            if (t.orientation !== 'up') return;
+
+            // 找到要影響的三角形：
+            // 1) 自己（正三）
+            // 2) 正下方倒三：位於下一層，index+1
+            // 3) 倒三左、右相鄰的正三：分別是 index 與 index+2
+            const affected = [];
+            affected.push(t);
+            const down = triangles.find(x => x.row === t.row + 1 && x.index === t.index + 1 && x.orientation === 'down');
+            const leftUp = down ? triangles.find(x => x.row === down.row && x.index === down.index - 1 && x.orientation === 'up') : null;
+            const rightUp = down ? triangles.find(x => x.row === down.row && x.index === down.index + 1 && x.orientation === 'up') : null;
+
+            // 驗證是否可成立（需同時存在：正下方倒三角、其左右兩個正三角）
+            if (!down || !leftUp || !rightUp) {
+                alert('此位置無法成立，請點擊可成立的位置（需存在正下方倒三與其左右正三）。');
+                return;
+            }
+
+            affected.push(down, leftUp, rightUp);
+            for (const tri of affected) {
+                tri.value = (tri.value + 1) % (maxValue + 1);
+            }
+
+            moveCount++;
+            renderBoard();
+            updateMoveCount();
+            if (checkVictory()) {
+                gameWon = true;
+                document.getElementById('victoryMessage').style.display = 'block';
+            }
+        }
+
+        // 翻轉指定大小的區域
+        function flipSquare(startRow, startCol) {
+            for (let i = startRow; i < startRow + flipRows; i++) {
+                for (let j = startCol; j < startCol + flipCols; j++) {
+                    // 數字變化：0→1→2→...→maxValue→0
+                    board[i][j] = (board[i][j] + 1) % (maxValue + 1);
+                }
+            }
+            renderBoard();
+        }
+
+        // 檢查勝利條件
+        function checkVictory() {
+            if (useTriangular) {
+                // 目標：原始為 00 的（倒三角）→ 01；原始為 01 的（正三角）→ 00
+                for (const t of triangles) {
+                    const expected = t.original === 0 ? 1 : 0;
+                    if (t.value !== expected) return false;
+                }
+                return true;
+            } else {
+                // 矩形：所有原本是00的格子變成01，所有原本是01的格子變成00
+                for (let i = 0; i < boardRows; i++) {
+                    for (let j = 0; j < boardCols; j++) {
+                        const originalValue = (i + j) % 2 === 0 ? 1 : 0; // 原始棋盤樣式
+                        const expectedValue = originalValue === 0 ? 1 : 0; // 期望的勝利狀態
+                        if (board[i][j] !== expectedValue) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+
+        // 更新移動次數
+        function updateMoveCount() {
+            document.getElementById('moveCount').textContent = moveCount;
+        }
+
+        // 新遊戲
+        function newGame() {
+            initGame();
+        }
+
+        // 重新開始
+        function resetGame() {
+            initGame();
+        }
+
+        // 顯示提示
+        function showHint() {
+            if (gameWon) return;
+            
+            // 簡單提示：告訴玩家目標
+            alert(`提示：\n1. 目標是讓所有原本是00的格子變成01\n2. 讓所有原本是01的格子變成00\n3. 點擊${flipRows}×${flipCols}的區域來改變數字\n4. 數字變化：0→1→2→...→${maxValue}→0`);
+        }
+
+        // 匯出PNG功能
+        function exportToPNG() {
+            try {
+                // 創建一個臨時的canvas元素
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 設定canvas大小（棋盤區域 + 邊距 + 標題區域）
+                const cellSize = 60; // 每個格子的大小
+                const padding = 30; // 邊距
+                const headerHeight = 80; // 標題區域高度
+                const boardWidth = boardCols * cellSize;
+                const boardHeight = boardRows * cellSize;
+                canvas.width = boardWidth + padding * 2;
+                canvas.height = boardHeight + padding * 2 + headerHeight;
+                
+                // 繪製背景漸層
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 繪製白色背景區域
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+                
+                // 繪製標題區域
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 24px Microsoft JhengHei, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🎮 棋盤翻轉遊戲', canvas.width / 2, 35);
+                
+                // 繪製遊戲信息
+                ctx.font = '16px Microsoft JhengHei, Arial, sans-serif';
+                ctx.fillStyle = '#666';
+                ctx.fillText(`棋盤大小: ${boardRows}×${boardCols}`, canvas.width / 2, 55);
+                ctx.fillText(`翻轉區域: ${flipRows}×${flipCols} | 數字上限: ${maxValue} | 移動次數: ${moveCount}`, canvas.width / 2, 75);
+                
+                // 計算棋盤位置（在標題下方）
+                const boardX = padding;
+                const boardY = padding + headerHeight;
+                
+                // 繪製棋盤陰影
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(boardX + 3, boardY + 3, boardWidth, boardHeight);
+                
+                // 繪製棋盤背景
+                ctx.fillStyle = '#333';
+                ctx.fillRect(boardX, boardY, boardWidth, boardHeight);
+                
+                // 繪製棋盤邊框
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boardX, boardY, boardWidth, boardHeight);
+                
+                // 繪製每個格子
+                for (let i = 0; i < boardRows; i++) {
+                    for (let j = 0; j < boardCols; j++) {
+                        const x = boardX + j * cellSize;
+                        const y = boardY + i * cellSize;
+                        
+                        // 設定格子顏色（統一的淺色背景）
+                        ctx.fillStyle = '#f8f8f8';
+                        
+                        // 繪製格子
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                        
+                        // 繪製格子邊框
+                        ctx.strokeStyle = '#666';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, cellSize, cellSize);
+                        
+                        // 繪製數字
+                        ctx.fillStyle = '#2c3e50';
+                        ctx.font = 'bold 16px Microsoft JhengHei, Arial, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(board[i][j].toString().padStart(2, '0'), x + cellSize/2, y + cellSize/2);
+                        
+                        // 添加格子高光效果
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + cellSize, y);
+                        ctx.lineTo(x + cellSize, y + cellSize);
+                        ctx.stroke();
+                    }
+                }
+                
+                // 添加勝利狀態指示
+                if (gameWon) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.font = 'bold 18px Microsoft JhengHei, Arial, sans-serif';
+                    ctx.fillText('🎉 勝利！', canvas.width / 2, canvas.height - 20);
+                }
+                
+                // 添加時間戳記
+                const now = new Date();
+                const timeString = now.toLocaleString('zh-TW');
+                ctx.fillStyle = '#999';
+                ctx.font = '12px Microsoft JhengHei, Arial, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText(`生成時間: ${timeString}`, canvas.width - 15, canvas.height - 5);
+                
+                // 轉換為PNG並下載
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `棋盤翻轉遊戲_${boardRows}x${boardCols}_${flipRows}x${flipCols}_上限${maxValue}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 'image/png');
+                
+            } catch (error) {
+                alert('匯出PNG失敗：' + error.message);
+            }
+        }
+
+        // 棋盤行數改變時重新初始化
+        document.getElementById('boardRows').addEventListener('input', function() {
+            const rows = parseInt(this.value);
+            if (rows >= 3 && rows <= 15) {
+                initGame();
+            }
+        });
+
+        // 棋盤列數改變時重新初始化
+        document.getElementById('boardCols').addEventListener('input', function() {
+            const cols = parseInt(this.value);
+            if (cols >= 3 && cols <= 15) {
+                initGame();
+            }
+        });
+
+        // 翻轉區域行數改變時重新初始化
+        document.getElementById('flipRows').addEventListener('input', function() {
+            const rows = parseInt(this.value);
+            if (rows >= 1 && rows <= 5) {
+                initGame();
+            }
+        });
+
+        // 翻轉區域列數改變時重新初始化
+        document.getElementById('flipCols').addEventListener('input', function() {
+            const cols = parseInt(this.value);
+            if (cols >= 1 && cols <= 5) {
+                initGame();
+            }
+        });
+
+        // 最大數值改變時重新初始化
+        document.getElementById('maxValue').addEventListener('input', function() {
+            const maxVal = parseInt(this.value);
+            if (maxVal >= 1 && maxVal <= 99) {
+                initGame();
+            }
+        });
+
+        // 三角棋盤控制
+        document.getElementById('triMode').addEventListener('change', function() {
+            initGame();
+        });
+        document.getElementById('levels').addEventListener('input', function() {
+            const lv = parseInt(this.value);
+            if (lv >= 2 && lv <= 10) {
+                initGame();
+            }
+        });
+
+        // 初始化遊戲
+        initGame();
+    </script>
+</body>
+</html>
+
