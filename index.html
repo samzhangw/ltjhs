@@ -296,7 +296,6 @@
          */
         async function loadGames() {
             const container = document.getElementById('game-container');
-            // 注意：我們不再清除 container.innerHTML，因為載入動畫已經在 HTML 中
             
             try {
                 const response = await fetch(WEB_APP_URL);
@@ -341,7 +340,7 @@
                 </ul>
                 <a href="${game.URL}" class="btn" target="_blank" rel="noopener noreferrer">開始遊戲</a>
                 
-                <button class"delete-btn" onclick="deleteGame('${game.URL}', '${game.Title}')" style="display: ${isAdmin ? 'block' : 'none'};">X</button>
+                <button class="delete-btn" onclick="deleteGame('${game.URL}', '${game.Title}')" style="display: ${isAdmin ? 'block' : 'none'};">X</button>
             `;
             return card;
         }
@@ -355,8 +354,7 @@
                 isAdmin = false;
                 document.getElementById('admin-panel').style.display = 'none';
                 document.getElementById('admin-btn').innerText = '⚙️ 管理面板';
-                // 重新載入卡片 (隱藏刪除按鈕)
-                loadGames();
+                loadGames(); // 重新載入卡片 (隱藏刪除按鈕)
             } else {
                 // 要求輸入密碼
                 const password = prompt('請輸入管理員密碼：');
@@ -364,8 +362,7 @@
                     isAdmin = true;
                     document.getElementById('admin-panel').style.display = 'block';
                     document.getElementById('admin-btn').innerText = '🔒 關閉管理面板';
-                    // 重新載入卡片 (顯示刪除按鈕)
-                    loadGames();
+                    loadGames(); // 重新載入卡片 (顯示刪除按鈕)
                 } else if (password) {
                     alert('密碼錯誤！');
                 }
@@ -387,11 +384,8 @@
                 url: document.getElementById('form-url').value,
             };
             
-            // 執行後端請求
             await sendDataToBackend('add', data);
-            
-            // 清空表單
-            this.reset();
+            this.reset(); // 清空表單
         });
 
         /**
@@ -402,12 +396,11 @@
                 return;
             }
             
-            // 執行後端請求
             await sendDataToBackend('delete', { url: url });
         }
 
         /**
-         * 向後端發送資料 (用於新增或刪除)
+         * 【已修復】向後端發送資料 (用於新增或刪除)
          */
         async function sendDataToBackend(action, data) {
             try {
@@ -417,10 +410,8 @@
                         secretKey: SECRET_KEY,
                         action: action,
                         data: data
-                    }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    })
+                    // 【已修復】移除了 'headers' 區塊來避免 CORS 預檢錯誤
                 });
 
                 const result = await response.json();
