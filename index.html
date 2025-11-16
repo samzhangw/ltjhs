@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>點點遊戲中心 - Sam Zhang 的作品</title>
     <style>
-        /* --- 全局樣式 (美化版) --- */
+        /* 您的 CSS 樣式... (保持不變) */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Microsoft JhengHei", "PingFang TC";
             background: linear-gradient(135deg, #f5f7fa 0%, #e0e8f0 100%);
@@ -14,31 +14,14 @@
             padding: 20px;
             line-height: 1.6;
         }
-
-        /* --- 標題區域 (美化版) --- */
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
+        .header { text-align: center; margin-bottom: 50px; }
         .header h1 {
-            font-size: 3rem;
-            font-weight: 800;
-            margin-bottom: 10px;
+            font-size: 3rem; font-weight: 800; margin-bottom: 10px;
             background: linear-gradient(45deg, #0052D4, #4364F7, #6FB1FC);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; text-fill-color: transparent;
         }
-
-        .header p {
-            font-size: 1.2rem;
-            color: #555;
-            font-weight: 300;
-        }
-
-        /* --- 卡片容器 --- */
+        .header p { font-size: 1.2rem; color: #555; font-weight: 300; }
         .game-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -46,8 +29,6 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-
-        /* --- 遊戲卡片 (美化版) --- */
         .game-card {
             background-color: #ffffff;
             border-radius: 12px;
@@ -56,69 +37,35 @@
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative; /* 為了刪除按鈕定位 */
+            position: relative;
         }
-
         .game-card:hover {
             transform: translateY(-8px) scale(1.02);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
-
-        .game-card h2 {
-            font-size: 1.6rem;
-            color: #1a5276;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-
-        .game-card ul {
-            list-style: none;
-            padding-left: 0;
-            margin-bottom: 25px;
-            flex-grow: 1;
-        }
-
+        .game-card h2 { font-size: 1.6rem; color: #1a5276; margin-top: 0; margin-bottom: 20px; }
+        .game-card ul { list-style: none; padding-left: 0; margin-bottom: 25px; flex-grow: 1; }
         .game-card li {
-            margin-bottom: 12px;
-            color: #444;
-            position: relative;
-            padding-left: 28px;
+            margin-bottom: 12px; color: #444; position: relative; padding-left: 28px;
         }
-
         .game-card li::before {
-            content: '✔';
-            color: #27ae60;
-            font-weight: bold;
-            font-size: 1.1em;
-            position: absolute;
-            left: 0;
-            top: 0;
+            content: '✔'; color: #27ae60; font-weight: bold;
+            font-size: 1.1em; position: absolute; left: 0; top: 0;
         }
-
-        /* --- 按鈕樣式 (美化版) --- */
         .btn {
-            display: block;
-            text-decoration: none;
+            display: block; text-decoration: none;
             background: linear-gradient(45deg, #2980b9, #3498db);
-            color: #ffffff;
-            padding: 14px 20px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            margin-top: auto;
-            border: none;
-            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+            color: #ffffff; padding: 14px 20px; border-radius: 8px;
+            text-align: center; font-weight: bold;
+            transition: all 0.3s ease; margin-top: auto;
+            border: none; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
             cursor: pointer;
         }
-
         .btn:hover {
             transform: scale(1.03);
             box-shadow: 0 6px 15px rgba(52, 152, 219, 0.5);
             background: linear-gradient(45deg, #3498db, #2980b9);
         }
-
-        /* --- 管理面板樣式 --- */
         .admin-panel {
             max-width: 1200px;
             margin: 40px auto;
@@ -126,13 +73,9 @@
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
-            display: none; /* 預設隱藏 */
+            display: none;
         }
-
-        .admin-panel h2 {
-            margin-top: 0;
-        }
-
+        .admin-panel h2 { margin-top: 0; }
         .admin-form input[type="text"] {
             width: calc(100% - 20px);
             padding: 10px;
@@ -140,21 +83,9 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
-
-        .admin-toggle {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        #admin-btn {
-            background: #6c757d;
-        }
-
-        #admin-btn:hover {
-            background: #5a6268;
-        }
-
-        /* 刪除按鈕 */
+        .admin-toggle { text-align: center; margin: 20px 0; }
+        #admin-btn { background: #6c757d; }
+        #admin-btn:hover { background: #5a6268; }
         .delete-btn {
             position: absolute;
             top: 10px;
@@ -168,71 +99,39 @@
             font-weight: bold;
             font-size: 16px;
             cursor: pointer;
-            display: none; /* 預設隱藏 */
+            display: none;
             opacity: 0.8;
             transition: opacity 0.3s;
         }
-
-        .delete-btn:hover {
-            opacity: 1;
-        }
-        
-        /* --- 讀取動畫 (優化版) --- */
+        .delete-btn:hover { opacity: 1; }
         .loader-wrapper {
-            grid-column: 1 / -1; /* 讓載入動畫置中於 Grid 佈局中 */
+            grid-column: 1 / -1;
             text-align: center;
             padding: 80px 0;
             color: #555;
             font-size: 1.1rem;
         }
-        
         .loader-container {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
         }
-
         .loader-dot {
             width: 14px;
             height: 14px;
             margin: 0 7px;
-            /* 使用主題漸層色 */
             background: linear-gradient(45deg, #0052D4, #4364F7);
             border-radius: 50%;
             animation: bounce 1.4s infinite ease-in-out both;
         }
-
-        .loader-dot:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-
-        .loader-dot:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-
+        .loader-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loader-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce {
-            0%, 80%, 100% {
-                transform: scale(0);
-            } 40% {
-                transform: scale(1.0);
-            }
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
         }
-
-        /* --- 響應式設計 (RWD) --- */
-        @media (max-width: 992px) {
-            .game-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .game-container {
-                grid-template-columns: 1fr;
-            }
-            .header h1 {
-                font-size: 2.2rem;
-            }
-        }
+        @media (max-width: 992px) { .game-container { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .game-container { grid-template-columns: 1fr; } .header h1 { font-size: 2.2rem; } }
     </style>
 </head>
 <body>
@@ -286,14 +185,10 @@
         // 2. !! 請輸入您在後端設定的「密鑰」!!
         const SECRET_KEY = 'chang';
 
-        let isAdmin = false; // 管理員模式狀態
+        let isAdmin = false;
 
-        // 當頁面載入時，自動執行 loadGames
         document.addEventListener('DOMContentLoaded', loadGames);
 
-        /**
-         * 載入並顯示所有遊戲
-         */
         async function loadGames() {
             const container = document.getElementById('game-container');
             
@@ -302,9 +197,8 @@
                 const result = await response.json();
 
                 if (result.status === "success") {
-                    container.innerHTML = ''; // 清空載入動畫
+                    container.innerHTML = '';
                     result.data.forEach(game => {
-                        // 只顯示有標題和網址的項目
                         if (game.Title && game.URL) {
                             container.appendChild(createGameCard(game));
                         }
@@ -313,19 +207,14 @@
                     throw new Error(result.message);
                 }
             } catch (error) {
-                // 修改錯誤訊息以符合 loader 的樣式
                 container.innerHTML = `<p class="loader-wrapper" style="color: red;">載入失敗: ${error.message}</p>`;
             }
         }
 
-        /**
-         * 根據遊戲資料建立一個 HTML 卡片元素
-         */
         function createGameCard(game) {
             const card = document.createElement('article');
             card.className = 'game-card';
 
-            // 建立描述列表
             let descriptions = '';
             for (let i = 1; i <= 4; i++) {
                 if (game['Desc' + i]) {
@@ -333,6 +222,7 @@
                 }
             }
 
+            // 【已修正】class"delete-btn" -> class="delete-btn"
             card.innerHTML = `
                 <h2>${game.Title}</h2>
                 <ul>
@@ -345,35 +235,27 @@
             return card;
         }
 
-        /**
-         * 切換管理面板的顯示/隱藏
-         */
         function toggleAdminPanel() {
             if (isAdmin) {
-                // 如果已經是管理員，隱藏面板並重置
                 isAdmin = false;
                 document.getElementById('admin-panel').style.display = 'none';
                 document.getElementById('admin-btn').innerText = '⚙️ 管理面板';
-                loadGames(); // 重新載入卡片 (隱藏刪除按鈕)
+                loadGames();
             } else {
-                // 要求輸入密碼
                 const password = prompt('請輸入管理員密碼：');
                 if (password === SECRET_KEY) {
                     isAdmin = true;
                     document.getElementById('admin-panel').style.display = 'block';
                     document.getElementById('admin-btn').innerText = '🔒 關閉管理面板';
-                    loadGames(); // 重新載入卡片 (顯示刪除按鈕)
+                    loadGames();
                 } else if (password) {
                     alert('密碼錯誤！');
                 }
             }
         }
 
-        /**
-         * 處理新增遊戲的表單提交
-         */
         document.getElementById('add-game-form').addEventListener('submit', async function(e) {
-            e.preventDefault(); // 防止表單真的提交
+            e.preventDefault();
             
             const data = {
                 title: document.getElementById('form-title').value,
@@ -385,12 +267,9 @@
             };
             
             await sendDataToBackend('add', data);
-            this.reset(); // 清空表單
+            this.reset();
         });
 
-        /**
-         * 刪除一個遊戲
-         */
         async function deleteGame(url, title) {
             if (!confirm(`您確定要刪除「${title}」嗎？這個操作無法復原。`)) {
                 return;
@@ -399,9 +278,6 @@
             await sendDataToBackend('delete', { url: url });
         }
 
-        /**
-         * 【已修復】向後端發送資料 (用於新增或刪除)
-         */
         async function sendDataToBackend(action, data) {
             try {
                 const response = await fetch(WEB_APP_URL, {
@@ -411,14 +287,14 @@
                         action: action,
                         data: data
                     })
-                    // 【已修復】移除了 'headers' 區塊來避免 CORS 預檢錯誤
+                    // 移除了 'headers' 區塊來避免 CORS 預檢錯誤
                 });
 
                 const result = await response.json();
                 
                 if (result.status === 'success') {
                     alert(result.message);
-                    loadGames(); // 重新載入列表
+                    loadGames();
                 } else {
                     throw new Error(result.message);
                 }
