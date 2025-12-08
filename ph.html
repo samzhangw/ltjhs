@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>六邊形遊戲圖形歸類器 (Web版)</title>
+    <title>六邊形結構自動歸類器 (完整檢視版)</title>
     <style>
         :root {
             --primary: #4f46e5;
@@ -26,7 +26,7 @@
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px; /* 加寬版面以便顯示更多圖片 */
             background: var(--surface);
             padding: 2rem;
             border-radius: 12px;
@@ -105,24 +105,36 @@
             border-radius: 8px;
             margin-bottom: 20px;
             overflow: hidden;
+            background: white;
         }
         .group-header {
-            background: #f8fafc;
-            padding: 10px 15px;
+            background: #f1f5f9;
+            padding: 15px;
             border-bottom: 1px solid var(--border);
             font-weight: bold;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         .group-content {
             padding: 15px;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
+            max-height: 500px; /* 如果圖片太多，讓它變成可捲動 */
+            overflow-y: auto;
         }
         .img-card {
             width: 100px;
             text-align: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .img-card:hover {
+            transform: scale(1.05);
         }
         .img-card img {
             width: 100px;
@@ -130,6 +142,7 @@
             object-fit: contain;
             border: 1px solid #eee;
             border-radius: 4px;
+            background: #fff;
         }
         .img-name {
             font-size: 0.75rem;
@@ -148,13 +161,43 @@
             max-height: 100px;
             overflow-y: auto;
         }
+
+        /* 大圖預覽 Modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 100; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.8); 
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🧩 六邊形結構自動歸類器</h1>
-    <p class="desc">上傳圖片 → 自動忽略顏色與旋轉差異 → 依照幾何結構分組</p>
+    <h1>🧩 六邊形結構自動歸類器 (全檢視版)</h1>
+    <p class="desc">上傳圖片 → 自動忽略顏色與旋轉差異 → 顯示所有結果</p>
 
     <div class="upload-area" id="dropZone">
         <span class="upload-icon">📂</span>
@@ -187,6 +230,11 @@
     <div id="resultsArea" class="results"></div>
 </div>
 
+<div id="imgModal" class="modal" onclick="closeModal()">
+    <span class="modal-close">&times;</span>
+    <img class="modal-content" id="modalImg">
+</div>
+
 <script>
     // --- 核心邏輯 (JS 復刻 Python 版) ---
 
@@ -197,6 +245,8 @@
     const statusLog = document.getElementById('statusLog');
     const progressBar = document.getElementById('progressBar');
     const resultsArea = document.getElementById('resultsArea');
+    const modal = document.getElementById('imgModal');
+    const modalImg = document.getElementById('modalImg');
     
     let selectedFiles = [];
     let processingGroups = [];
@@ -208,7 +258,7 @@
     // 事件監聽
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'); );
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
@@ -222,7 +272,6 @@
         const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
         if (imgs.length === 0) return;
         
-        // 合併新檔案 (允許分批上傳)
         selectedFiles = [...selectedFiles, ...imgs];
         statusLog.textContent = `目前已選擇 ${selectedFiles.length} 張圖片。`;
         processBtn.disabled = false;
@@ -231,7 +280,6 @@
         resultsArea.innerHTML = '';
     }
 
-    // 讀取圖片並轉為 Image 物件
     function loadImage(file) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -241,40 +289,28 @@
         });
     }
 
-    // 1. 預處理：轉正方形 + 二值化 (消除顏色)
     function preprocessImage(img, size) {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
-
-        // 填白底
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, size, size);
-
-        // 居中繪製原始圖片
         const w = img.naturalWidth;
         const h = img.naturalHeight;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2);
 
-        // 像素處理 (二值化)
         const imgData = ctx.getImageData(0, 0, size, size);
         const data = imgData.data;
         for (let i = 0; i < data.length; i += 4) {
-            // 計算灰階 (R*0.299 + G*0.587 + B*0.114)
             const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-            // 閾值判斷：大於200變全白，小於變全黑
             const val = gray > BINARY_THRESHOLD ? 255 : 0;
-            data[i] = val;     // R
-            data[i+1] = val;   // G
-            data[i+2] = val;   // B
-            // Alpha 不變
+            data[i] = val; data[i+1] = val; data[i+2] = val;
         }
         ctx.putImageData(imgData, 0, 0);
         return canvas;
     }
 
-    // 2. 旋轉
     function getRotatedCanvas(sourceCanvas, angleDeg) {
         if (angleDeg === 0) return sourceCanvas;
         const size = sourceCanvas.width;
@@ -282,44 +318,33 @@
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
-
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, size, size);
-        
         ctx.translate(size / 2, size / 2);
         ctx.rotate(angleDeg * Math.PI / 180);
         ctx.drawImage(sourceCanvas, -size / 2, -size / 2);
         return canvas;
     }
 
-    // 3. 計算 Hash (特徵指紋)
     function calculateHash(canvas, hashSize) {
         const smallCanvas = document.createElement('canvas');
         smallCanvas.width = hashSize;
         smallCanvas.height = hashSize;
         const ctx = smallCanvas.getContext('2d');
-        
-        // 縮放 (類似 Python 的 Resize)
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(canvas, 0, 0, hashSize, hashSize);
-
         const data = ctx.getImageData(0, 0, hashSize, hashSize).data;
         let pixels = [];
         let sum = 0;
-        
-        // 取出亮度值
         for(let i=0; i<data.length; i+=4) {
-            pixels.push(data[i]); // 因為已經二值化，取 R 即可
+            pixels.push(data[i]);
             sum += data[i];
         }
-
         const avg = sum / pixels.length;
-        // 產生 '101001...' 字串
         return pixels.map(p => p > avg ? '1' : '0').join('');
     }
 
-    // Hamming Distance (計算兩個字串有幾個位元不同)
     function hammingDistance(s1, s2) {
         let dist = 0;
         for (let i = 0; i < s1.length; i++) {
@@ -328,7 +353,6 @@
         return dist;
     }
 
-    // --- 主流程 ---
     async function startAnalysis() {
         if (selectedFiles.length === 0) return;
 
@@ -339,47 +363,39 @@
         const hashSize = parseInt(document.getElementById('hashSizeInput').value) || 16;
         const threshold = parseInt(document.getElementById('thresholdInput').value) || 5;
 
-        let fileData = []; // { file, hash, name }
+        let fileData = []; 
         
-        // 第一階段：生成每個檔案的 Canonical Hash
         for (let i = 0; i < selectedFiles.length; i++) {
             const file = selectedFiles[i];
             statusLog.textContent = `處理中 (${i+1}/${selectedFiles.length}): ${file.name}`;
-            progressBar.style.width = `${((i+1) / selectedFiles.length) * 50}%`; // 前50%進度
+            progressBar.style.width = `${((i+1) / selectedFiles.length) * 50}%`; 
 
             try {
                 const img = await loadImage(file);
                 const size = Math.max(img.naturalWidth, img.naturalHeight);
                 const baseCanvas = preprocessImage(img, size);
 
-                // 暴力旋轉 6 次，找最小的 Hash
                 let minHash = null;
                 for (const angle of ANGLES) {
                     const rotCanvas = getRotatedCanvas(baseCanvas, angle);
                     const h = calculateHash(rotCanvas, hashSize);
-                    if (minHash === null || h < minHash) { // 字串比較
-                        minHash = h;
-                    }
+                    if (minHash === null || h < minHash) minHash = h;
                 }
                 fileData.push({ file: file, hash: minHash, name: file.name });
 
             } catch (err) {
                 console.error("Error processing " + file.name, err);
             }
-            
-            // 讓 UI 呼吸
             await new Promise(r => setTimeout(r, 0));
         }
 
-        // 第二階段：分組
         statusLog.textContent = "正在進行分群比對...";
-        let groups = []; // [ { repHash: '...', files: [...] } ]
+        let groups = []; 
 
         for (let i = 0; i < fileData.length; i++) {
             const item = fileData[i];
             let foundGroup = null;
 
-            // 尋找現有群組
             for (let g of groups) {
                 const dist = hammingDistance(item.hash, g.repHash);
                 if (dist <= threshold) {
@@ -391,17 +407,13 @@
             if (foundGroup) {
                 foundGroup.files.push(item);
             } else {
-                // 建立新群組
                 groups.push({ repHash: item.hash, files: [item] });
             }
-            
             progressBar.style.width = `${50 + ((i+1) / fileData.length) * 50}%`;
         }
 
-        // 排序：數量多的群組排前面
         groups.sort((a, b) => b.files.length - a.files.length);
         processingGroups = groups;
-
         renderResults(groups);
         
         statusLog.textContent = `完成！共分為 ${groups.length} 組。`;
@@ -424,10 +436,11 @@
             const content = document.createElement('div');
             content.className = 'group-content';
 
-            // 顯示每個群組的前 12 張圖預覽
-            group.files.slice(0, 12).forEach(item => {
+            // 這裡不再使用 slice，而是遍歷所有檔案
+            group.files.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'img-card';
+                card.onclick = () => openModal(item.file); // 綁定點擊事件
                 
                 const img = document.createElement('img');
                 img.src = URL.createObjectURL(item.file);
@@ -442,24 +455,24 @@
                 content.appendChild(card);
             });
 
-            if (group.files.length > 12) {
-                const more = document.createElement('div');
-                more.style.alignSelf = 'center';
-                more.style.color = '#999';
-                more.textContent = `(+${group.files.length - 12} more...)`;
-                content.appendChild(more);
-            }
-
             groupDiv.appendChild(header);
             groupDiv.appendChild(content);
             resultsArea.appendChild(groupDiv);
         });
     }
 
+    function openModal(file) {
+        modal.style.display = "flex";
+        modalImg.src = URL.createObjectURL(file);
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
     function downloadCSV() {
         if (!processingGroups.length) return;
-        
-        let csvContent = "\uFEFFGroup,FileName\n"; // BOM for Excel
+        let csvContent = "\uFEFFGroup,FileName\n";
         processingGroups.forEach((group, idx) => {
             const groupName = `Layout_${String(idx + 1).padStart(2, '0')}`;
             group.files.forEach(item => {
