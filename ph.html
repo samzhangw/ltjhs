@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圖片旋轉與分組工具 (Web版)</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --bg: #f8f9fa;
+            --text: #212529;
+            --border: #dee2e6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 { margin-top: 0; font-size: 1.5rem; text-align: center; color: var(--primary); }
+        p { color: #666; font-size: 0.9rem; text-align: center; }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background-color: #eef2ff;
+        }
+
+        input[type="file"] { display: none; }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: #3046c5; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        .status-bar {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        th { background-color: #f1f3f5; font-weight: 600; }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin: 15px 0;
+            height: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Game Image Grouper (Web Version)</h1>
+    <p>選擇資料夾或多個圖片檔案。支援自動旋轉識別與相似度分組。</p>
+
+    <div class="upload-area" id="dropZone">
+        <p>點擊選擇檔案 或 將檔案拖曳至此</p>
+        <p style="font-size: 0.8em; color: #999;">(支援 .png, .jpg, .jpeg)</p>
+        <input type="file" id="fileInput" multiple accept="image/*">
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="processBtn" disabled>開始處理</button>
+        <button id="downloadBtn" class="hidden" style="background-color: #28a745;">下載 CSV</button>
+    </div>
+
+    <div class="status-bar" id="statusBox">等待檔案...</div>
+
+    <table id="resultTable" class="hidden">
+        <thead>
+            <tr>
+                <th style="width: 60px;">Group</th>
+                <th>Games</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    // --- Configuration ---
+    const HASH_SIZE = 32;
+    // 模擬 Python 的 0, 60, 120, 180, 240, 300 度旋轉
+    const ROTATION_ANGLES = [0, 60, 120, 180, 240, 300]; 
+    
+    // Regex Patterns (JS version)
+    const GAME_RE_BASE = /\bGAME[_-]?(\d{3})\b/i;
+    const GAME_RE_TURN = /\bGame[_-]?(\d{3})[_-]?Turn[_-]?(\d{3})\b/i;
+
+    // --- State ---
+    let selectedFiles = [];
+    let processingGroups = {};
+
+    // --- DOM Elements ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const processBtn = document.getElementById('processBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusBox = document.getElementById('statusBox');
+    const progressBar = document.getElementById('progressBar');
+    const progressContainer = document.getElementById('progressContainer');
+    const resultTable = document.getElementById('resultTable');
+    const tbody = resultTable.querySelector('tbody');
+
+    // --- Event Listeners ---
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    processBtn.addEventListener('click', startProcessing);
+    downloadBtn.addEventListener('click', downloadCSV);
+
+    function log(msg) {
+        statusBox.innerText += msg + '\n';
+        statusBox.scrollTop = statusBox.scrollHeight;
+    }
+
+    function handleFiles(files) {
+        selectedFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+        if (selectedFiles.length > 0) {
+            statusBox.innerText = `已選擇 ${selectedFiles.length} 個圖檔。\n`;
+            processBtn.disabled = false;
+            processBtn.innerText = `處理 ${selectedFiles.length} 個檔案`;
+            downloadBtn.classList.add('hidden');
+            resultTable.classList.add('hidden');
+        } else {
+            statusBox.innerText = "未選擇有效的圖片檔案。";
+        }
+    }
+
+    // --- Core Logic: Image Processing ---
+
+    // Load image file into an Image Object
+    function loadImage(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    // Pad image to square with white background (Canvas implementation of _pad_to_square + _to_white_bg)
+    function getPaddedSquareCanvas(img) {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const side = Math.max(w, h);
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = side;
+        canvas.height = side;
+        const ctx = canvas.getContext('2d');
+
+        // Fill white
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, side, side);
+
+        // Center image
+        const x = (side - w) / 2;
+        const y = (side - h) / 2;
+        ctx.drawImage(img, x, y);
+        
+        return canvas;
+    }
+
+    // Rotate canvas and return a new canvas (expanding to fit)
+    function getRotatedCanvas(sourceCanvas, angleDegrees) {
+        if (angleDegrees === 0) return sourceCanvas;
+
+        const angleRad = angleDegrees * Math.PI / 180;
+        const w = sourceCanvas.width;
+        const h = sourceCanvas.height;
+
+        // Calculate new bounding box size
+        const newW = Math.abs(w * Math.cos(angleRad)) + Math.abs(h * Math.sin(angleRad));
+        const newH = Math.abs(w * Math.sin(angleRad)) + Math.abs(h * Math.cos(angleRad));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(newW);
+        canvas.height = Math.ceil(newH);
+        const ctx = canvas.getContext('2d');
+
+        // Fill white
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Rotate
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(angleRad);
+        
+        // Pad original to square first logic implies we draw the squared image
+        // To strictly follow Python: Python rotates the image, then pads to square.
+        // But here we take an already squared image and rotate it.
+        // Let's draw centered.
+        ctx.drawImage(sourceCanvas, -w / 2, -h / 2);
+
+        // Result might not be square anymore due to bounding box calculation, 
+        // Python _pad_to_square is called AFTER rotation in canonical_hash_from_rotations.
+        // So we need to pad this result again.
+        
+        // Extract this rotated image data to a new canvas to pad it
+        // (This mimics: r = img.rotate(...); r = _pad_to_square(r))
+        return padCanvasToSquare(canvas);
+    }
+
+    function padCanvasToSquare(sourceCanvas) {
+        const w = sourceCanvas.width;
+        const h = sourceCanvas.height;
+        if (w === h) return sourceCanvas;
+
+        const side = Math.max(w, h);
+        const canvas = document.createElement('canvas');
+        canvas.width = side;
+        canvas.height = side;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, side, side);
+        ctx.drawImage(sourceCanvas, (side - w) / 2, (side - h) / 2);
+        return canvas;
+    }
+
+    // Calculate aHash (Average Hash)
+    // Returns a BigInt because 32x32 = 1024 bits which overflows standard Number
+    function calculateAHash(canvas, size = 32) {
+        // Resize to size x size
+        const smallCanvas = document.createElement('canvas');
+        smallCanvas.width = size;
+        smallCanvas.height = size;
+        const ctx = smallCanvas.getContext('2d');
+        
+        // Use high quality resizing if possible, though default is usually fine
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(canvas, 0, 0, size, size);
+
+        const imgData = ctx.getImageData(0, 0, size, size);
+        const pixels = imgData.data; // RGBA
+        
+        let grays = [];
+        let sum = 0;
+
+        // Convert to grayscale and sum
+        for (let i = 0; i < pixels.length; i += 4) {
+            // Standard luminance: 0.299R + 0.587G + 0.114B
+            // Or simple average like Python PIL "L" mode usually approximates
+            // The Python script uses ImageOps.grayscale -> "L" mode
+            // PIL L mode = R * 299/1000 + G * 587/1000 + B * 114/1000
+            const val = pixels[i] * 0.299 + pixels[i+1] * 0.587 + pixels[i+2] * 0.114;
+            grays.push(val);
+            sum += val;
+        }
+
+        const mean = sum / grays.length;
+        
+        // Build BigInt bitmask
+        // We construct a binary string first to avoid bitwise limitation of 32-bit JS ints
+        let binaryStr = "";
+        // Note: Python script does: bits |= (1 << i). 
+        // This implies the 0th pixel is the least significant bit.
+        // JS BigInt can handle this.
+        
+        // Ideally we reverse the loop to build string "1001..." or use BigInt logic directly.
+        // Let's use BigInt accumulation.
+        let hashVal = 0n;
+        for (let i = 0; i < grays.length; i++) {
+            if (grays[i] > mean) {
+                hashVal |= (1n << BigInt(i));
+            }
+        }
+        return hashVal;
+    }
+
+    // --- Main Processing Flow ---
+
+    async function startProcessing() {
+        if (selectedFiles.length === 0) return;
+
+        processBtn.disabled = true;
+        downloadBtn.classList.add('hidden');
+        tbody.innerHTML = '';
+        processingGroups = {};
+        
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+
+        // 1. Group files by GameID first to determine Mode
+        const gameFiles = {}; // { "001": [file, file, ...] }
+        let mode = "base"; // Default
+        
+        // Check first few files to guess mode
+        let turnModeCount = 0;
+
+        for (const file of selectedFiles) {
+            let m = GAME_RE_TURN.exec(file.name);
+            if (m) {
+                const gid = m[1];
+                if (!gameFiles[gid]) gameFiles[gid] = [];
+                gameFiles[gid].push(file);
+                turnModeCount++;
+                continue;
+            }
+            m = GAME_RE_BASE.exec(file.name);
+            if (m) {
+                const gid = m[1];
+                if (!gameFiles[gid]) gameFiles[gid] = [];
+                gameFiles[gid].push(file);
+            }
+        }
+
+        if (turnModeCount > 0) {
+            mode = "turn";
+        }
+
+        log(`模式檢測: ${mode === 'turn' ? 'Turn Mode (多回合取最小Hash)' : 'Base Mode (單圖自動旋轉)'}`);
+
+        // 2. Process Games
+        const gameIds = Object.keys(gameFiles).sort();
+        const totalGames = gameIds.length;
+        const sigToGames = {}; // { signature(BigInt): ["GAME_001", ...] }
+
+        let processedCount = 0;
+
+        for (const gid of gameIds) {
+            const files = gameFiles[gid];
+            let minHash = null;
+
+            // Process logic based on mode
+            if (mode === "turn") {
+                // Load all turns, pad, hash, find min
+                for (const file of files) {
+                    try {
+                        const img = await loadImage(file);
+                        const canvas = getPaddedSquareCanvas(img);
+                        const hash = calculateAHash(canvas, HASH_SIZE);
+                        
+                        if (minHash === null || hash < minHash) {
+                            minHash = hash;
+                        }
+                    } catch (e) {
+                        console.error(`Error processing ${file.name}`, e);
+                    }
+                }
+            } else {
+                // Base mode: Load one file (usually only one), rotate it, find min
+                // If multiple files map to same base ID in base mode, we process the first one found or all.
+                // Assuming one base file per ID usually.
+                const file = files[0]; 
+                try {
+                    const img = await loadImage(file);
+                    const baseCanvas = getPaddedSquareCanvas(img); // already padded to square
+                    
+                    // Rotate and hash
+                    for (const angle of ROTATION_ANGLES) {
+                        const rotCanvas = getRotatedCanvas(baseCanvas, angle);
+                        const hash = calculateAHash(rotCanvas, HASH_SIZE);
+                        
+                        if (minHash === null || hash < minHash) {
+                            minHash = hash;
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Error processing ${file.name}`, e);
+                }
+            }
+
+            if (minHash !== null) {
+                // Use string representation of BigInt as key for Object
+                const sigKey = minHash.toString();
+                if (!sigToGames[sigKey]) sigToGames[sigKey] = [];
+                sigToGames[sigKey].push(`GAME_${gid}`);
+            }
+
+            // Update Progress
+            processedCount++;
+            const pct = Math.round((processedCount / totalGames) * 100);
+            progressBar.style.width = `${pct}%`;
+            if (pct % 10 === 0) log(`進度: ${pct}% (${processedCount}/${totalGames})`);
+            
+            // Allow UI to breathe
+            await new Promise(r => setTimeout(r, 0));
+        }
+
+        // 3. Group and Display
+        // Sort groups by the minimum game ID in the group
+        const groups = Object.values(sigToGames).sort((a, b) => {
+            const getMinId = (arr) => Math.min(...arr.map(s => parseInt(s.match(/\d+/)[0])));
+            return getMinId(a) - getMinId(b);
+        });
+
+        // Render Table
+        groups.forEach((games, index) => {
+            const row = document.createElement('tr');
+            const cellId = document.createElement('td');
+            cellId.textContent = (index + 1).toString().padStart(2, '0');
+            const cellGames = document.createElement('td');
+            cellGames.textContent = games.sort().join(', ');
+            
+            row.appendChild(cellId);
+            row.appendChild(cellGames);
+            tbody.appendChild(row);
+        });
+
+        resultTable.classList.remove('hidden');
+        downloadBtn.classList.remove('hidden');
+        processBtn.disabled = false;
+        log("處理完成！");
+        processingGroups = groups;
+    }
+
+    // --- CSV Export ---
+    function downloadCSV() {
+        if (!processingGroups || processingGroups.length === 0) return;
+
+        let csvContent = "\uFEFFgroup_index,games\n"; // Add BOM for Excel utf-8
+        processingGroups.forEach((games, index) => {
+            csvContent += `${index + 1},"${games.sort().join(' ')}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'game_rotation_groups.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+</script>
+</body>
+</html>
