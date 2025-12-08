@@ -3,22 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>六邊形結構自動歸類器 (完整檢視版)</title>
+    <title>AI 六邊形結構歸類器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4f46e5;
-            --bg: #f8fafc;
-            --surface: #ffffff;
+            --primary: #6366f1; /* Indigo */
+            --primary-hover: #4f46e5;
+            --secondary: #10b981; /* Emerald */
+            --bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            --surface: rgba(255, 255, 255, 0.9);
             --border: #e2e8f0;
-            --text: #334155;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
 
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -26,206 +34,375 @@
 
         .container {
             width: 100%;
-            max-width: 1200px; /* 加寬版面以便顯示更多圖片 */
+            max-width: 1200px;
             background: var(--surface);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255,255,255,0.5);
         }
 
-        h1 { margin-top: 0; color: var(--primary); text-align: center; }
-        .desc { text-align: center; color: #64748b; margin-bottom: 2rem; }
+        /* Header Styling */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        h1 {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: -webkit-linear-gradient(45deg, #4f46e5, #9333ea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .desc {
+            margin-top: 0.5rem;
+            color: var(--text-sub);
+            font-size: 1.1rem;
+        }
 
-        /* 上傳區塊 */
+        /* Upload Area */
         .upload-area {
-            border: 2px dashed #cbd5e1;
-            border-radius: 8px;
-            padding: 3rem;
+            border: 3px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 4rem 2rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
-            background-color: #f1f5f9;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: rgba(248, 250, 252, 0.5);
+            position: relative;
+            overflow: hidden;
         }
-        .upload-area:hover, .upload-area.dragover {
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: rgba(224, 231, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        .upload-area.dragover {
             border-color: var(--primary);
             background-color: #e0e7ff;
+            transform: scale(1.01);
         }
-        .upload-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
-        
-        /* 控制區 */
-        .controls {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f1f5f9;
-            border-radius: 8px;
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        .upload-area:hover .upload-icon {
+            transform: scale(1.1) rotate(10deg);
+        }
+        .upload-text h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-main);
+        }
+        .upload-text p {
+            color: var(--text-sub);
+            margin: 0.5rem 0 0 0;
+        }
+
+        /* Controls Section */
+        .controls-wrapper {
             display: flex;
             gap: 20px;
-            flex-wrap: wrap;
+            margin-top: 2rem;
             justify-content: center;
-            align-items: center;
+            flex-wrap: wrap;
         }
-        
-        label { font-weight: bold; font-size: 0.9rem; }
-        input[type="number"] { padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 60px; }
+        .setting-card {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .setting-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+        input[type="number"] {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            width: 70px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="number"]:focus {
+            border-color: var(--primary);
+        }
 
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 2rem;
+        }
         button {
             background-color: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 12px 32px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 1rem;
-            transition: opacity 0.2s;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+            transition: all 0.2s;
         }
-        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        button.secondary { background-color: #10b981; }
+        button:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.5);
+        }
+        button:disabled {
+            background-color: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        button.secondary {
+            background-color: var(--secondary);
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+        }
+        button.secondary:hover {
+            background-color: #059669;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.5);
+        }
 
-        /* 進度條 */
+        /* Progress Bar */
         .progress-container {
             width: 100%;
-            height: 6px;
+            height: 10px;
             background: #e2e8f0;
-            border-radius: 3px;
-            margin-top: 20px;
+            border-radius: 5px;
+            margin-top: 2rem;
             overflow: hidden;
             display: none;
         }
         .progress-bar {
             height: 100%;
-            background: var(--primary);
+            background: linear-gradient(90deg, var(--primary) 0%, #a855f7 100%);
             width: 0%;
-            transition: width 0.3s;
+            transition: width 0.3s ease-out;
+            border-radius: 5px;
         }
 
-        /* 結果顯示 */
-        .results { margin-top: 30px; }
+        /* Status Log */
+        #statusLog {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            font-family: 'Inter', monospace;
+            height: 24px;
+        }
+
+        /* Results Area */
+        .results {
+            margin-top: 3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
         .group-block {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
             background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            animation: fadeIn 0.5s ease-out;
         }
         .group-header {
-            background: #f1f5f9;
-            padding: 15px;
+            background: #f8fafc;
+            padding: 1rem 1.5rem;
             border-bottom: 1px solid var(--border);
-            font-weight: bold;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
-        .group-content {
-            padding: 15px;
+        .group-title {
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 1.1rem;
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            max-height: 500px; /* 如果圖片太多，讓它變成可捲動 */
+            align-items: center;
+            gap: 8px;
+        }
+        .badge {
+            background: #e0e7ff;
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .group-content {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 16px;
+            max-height: 400px;
             overflow-y: auto;
         }
+        
+        /* Custom Scrollbar */
+        .group-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .group-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .group-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .group-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         .img-card {
-            width: 100px;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: transform 0.2s;
+            position: relative;
         }
         .img-card:hover {
-            transform: scale(1.05);
+            transform: translateY(-4px);
         }
-        .img-card img {
-            width: 100px;
-            height: 100px;
+        .img-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .img-card:hover .img-wrapper {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+        .img-wrapper img {
+            max-width: 90%;
+            max-height: 90%;
             object-fit: contain;
-            border: 1px solid #eee;
-            border-radius: 4px;
-            background: #fff;
         }
         .img-name {
             font-size: 0.75rem;
-            color: #64748b;
+            color: var(--text-sub);
+            margin-top: 8px;
+            text-align: center;
+            width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            margin-top: 4px;
         }
 
-        #statusLog {
-            margin-top: 10px;
-            font-size: 0.85rem;
-            color: #64748b;
-            white-space: pre-wrap;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-
-        /* 大圖預覽 Modal */
+        /* Modal */
         .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 100; 
+            display: none;
+            position: fixed;
+            z-index: 1000;
             left: 0;
             top: 0;
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgba(0,0,0,0.8); 
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
             justify-content: center;
             align-items: center;
+            animation: fadeIn 0.2s;
         }
         .modal-content {
             max-width: 90%;
-            max-height: 90%;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9);
+            animation: popIn 0.3s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .modal-close {
             position: absolute;
             top: 20px;
-            right: 35px;
-            color: #f1f1f1;
-            font-size: 40px;
+            right: 30px;
+            color: white;
+            font-size: 2rem;
             font-weight: bold;
             cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
         }
+        .modal-close:hover { opacity: 1; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes popIn {
+            to { transform: scale(1); }
+        }
+
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🧩 六邊形結構自動歸類器 (全檢視版)</h1>
-    <p class="desc">上傳圖片 → 自動忽略顏色與旋轉差異 → 顯示所有結果</p>
+    <header>
+        <h1>🧩 六邊形結構自動歸類器</h1>
+        <p class="desc">智慧忽略顏色與旋轉 • 依幾何結構自動分組</p>
+    </header>
 
     <div class="upload-area" id="dropZone">
-        <span class="upload-icon">📂</span>
-        <h3>點擊選擇或拖曳圖片至此</h3>
-        <p>支援 .png, .jpg (建議一次選擇多張)</p>
+        <div class="upload-icon">📂</div>
+        <div class="upload-text">
+            <h3>點擊或拖曳圖片至此</h3>
+            <p>支援 .PNG, .JPG (建議一次上傳多張)</p>
+        </div>
         <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
     </div>
 
-    <div class="controls">
-        <div>
-            <label title="數值越小越嚴格，0表示完全相同">相似度閾值 (Distance): </label>
-            <input type="number" id="thresholdInput" value="5" min="0" max="20">
+    <div class="controls-wrapper">
+        <div class="setting-card">
+            <span class="setting-label">容許差異 (0-20):</span>
+            <input type="number" id="thresholdInput" value="5" min="0" max="20" title="數值越小越嚴格">
         </div>
-        <div>
-            <label title="縮圖大小，16代表產生16x16的特徵指紋">Hash Size: </label>
-            <input type="number" id="hashSizeInput" value="16" min="8" max="32">
+        <div class="setting-card">
+            <span class="setting-label">特徵精度 (Hash Size):</span>
+            <input type="number" id="hashSizeInput" value="16" min="8" max="32" title="建議維持 16">
         </div>
+    </div>
+
+    <div class="btn-group">
+        <button id="processBtn" disabled>開始智慧分析</button>
+        <button id="downloadBtn" class="secondary" style="display: none;">📥 下載 CSV 報告</button>
     </div>
 
     <div class="progress-container" id="progressContainer">
         <div class="progress-bar" id="progressBar"></div>
     </div>
-    <div id="statusLog">等待圖片...</div>
-
-    <div style="text-align: center; margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
-        <button id="processBtn" disabled>開始分析</button>
-        <button id="downloadBtn" class="secondary" style="display: none;">下載 CSV 清單</button>
-    </div>
+    <div id="statusLog">準備就緒</div>
 
     <div id="resultsArea" class="results"></div>
 </div>
@@ -236,7 +413,7 @@
 </div>
 
 <script>
-    // --- 核心邏輯 (JS 復刻 Python 版) ---
+    // --- JavaScript 核心邏輯 (功能不變，僅配合新 ID) ---
 
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
@@ -251,20 +428,25 @@
     let selectedFiles = [];
     let processingGroups = [];
 
-    // 設定值
-    const BINARY_THRESHOLD = 200; // 亮度 > 200 視為背景(白)，否則為線條(黑)
-    const ANGLES = [0, 60, 120, 180, 240, 300]; // 六邊形旋轉角度
+    const BINARY_THRESHOLD = 200; 
+    const ANGLES = [0, 60, 120, 180, 240, 300];
 
-    // 事件監聽
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    // 拖曳效果
+    dropZone.addEventListener('dragover', (e) => { 
+        e.preventDefault(); 
+        dropZone.classList.add('dragover'); 
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
         handleFiles(e.dataTransfer.files);
     });
+    dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+    
     processBtn.addEventListener('click', startAnalysis);
     downloadBtn.addEventListener('click', downloadCSV);
 
@@ -273,9 +455,10 @@
         if (imgs.length === 0) return;
         
         selectedFiles = [...selectedFiles, ...imgs];
-        statusLog.textContent = `目前已選擇 ${selectedFiles.length} 張圖片。`;
+        statusLog.textContent = `✅ 已載入 ${selectedFiles.length} 張圖片`;
+        statusLog.style.color = 'var(--primary)';
         processBtn.disabled = false;
-        processBtn.textContent = `分析 ${selectedFiles.length} 張圖片`;
+        processBtn.innerHTML = `開始分析 ${selectedFiles.length} 張圖片`;
         downloadBtn.style.display = 'none';
         resultsArea.innerHTML = '';
     }
@@ -357,6 +540,7 @@
         if (selectedFiles.length === 0) return;
 
         processBtn.disabled = true;
+        processBtn.textContent = "運算中...";
         document.getElementById('progressContainer').style.display = 'block';
         resultsArea.innerHTML = '';
         
@@ -365,9 +549,10 @@
 
         let fileData = []; 
         
+        // 階段一：特徵提取
         for (let i = 0; i < selectedFiles.length; i++) {
             const file = selectedFiles[i];
-            statusLog.textContent = `處理中 (${i+1}/${selectedFiles.length}): ${file.name}`;
+            statusLog.textContent = `提取特徵 (${i+1}/${selectedFiles.length}): ${file.name}`;
             progressBar.style.width = `${((i+1) / selectedFiles.length) * 50}%`; 
 
             try {
@@ -384,12 +569,13 @@
                 fileData.push({ file: file, hash: minHash, name: file.name });
 
             } catch (err) {
-                console.error("Error processing " + file.name, err);
+                console.error(err);
             }
             await new Promise(r => setTimeout(r, 0));
         }
 
-        statusLog.textContent = "正在進行分群比對...";
+        // 階段二：分群
+        statusLog.textContent = "正在進行智慧分群...";
         let groups = []; 
 
         for (let i = 0; i < fileData.length; i++) {
@@ -416,11 +602,15 @@
         processingGroups = groups;
         renderResults(groups);
         
-        statusLog.textContent = `完成！共分為 ${groups.length} 組。`;
+        statusLog.textContent = `🎉 完成！共分為 ${groups.length} 個群組`;
+        statusLog.style.color = 'var(--secondary)';
         processBtn.disabled = false;
         processBtn.textContent = '重新分析';
         downloadBtn.style.display = 'inline-block';
-        progressBar.style.width = '100%';
+        
+        setTimeout(() => {
+            progressBar.style.width = '100%';
+        }, 200);
     }
 
     function renderResults(groups) {
@@ -429,18 +619,27 @@
             const groupDiv = document.createElement('div');
             groupDiv.className = 'group-block';
 
+            // Header
             const header = document.createElement('div');
             header.className = 'group-header';
-            header.innerHTML = `<span>Group ${idx + 1}</span> <span>${group.files.length} 張圖片</span>`;
+            header.innerHTML = `
+                <div class="group-title">
+                    <span>群組 ${idx + 1}</span>
+                    <span class="badge">${group.files.length} 張</span>
+                </div>
+            `;
 
+            // Content Grid
             const content = document.createElement('div');
             content.className = 'group-content';
 
-            // 這裡不再使用 slice，而是遍歷所有檔案
             group.files.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'img-card';
-                card.onclick = () => openModal(item.file); // 綁定點擊事件
+                card.onclick = () => openModal(item.file);
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'img-wrapper';
                 
                 const img = document.createElement('img');
                 img.src = URL.createObjectURL(item.file);
@@ -450,7 +649,8 @@
                 name.textContent = item.name;
                 name.title = item.name;
 
-                card.appendChild(img);
+                wrapper.appendChild(img);
+                card.appendChild(wrapper);
                 card.appendChild(name);
                 content.appendChild(card);
             });
@@ -470,6 +670,13 @@
         modal.style.display = "none";
     }
 
+    // Close modal on outside click
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
     function downloadCSV() {
         if (!processingGroups.length) return;
         let csvContent = "\uFEFFGroup,FileName\n";
@@ -484,7 +691,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = "grouped_results.csv";
+        link.download = "hexagon_group_results.csv";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
