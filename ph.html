@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 六邊形歸類器 (雙模式分析版)</title>
+    <title>AI 六邊形歸類器 (關鍵字過濾版)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
@@ -91,6 +91,9 @@
         }
         .control-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; }
         input[type="number"] { width: 60px; padding: 6px; border-radius: 6px; border: 1px solid #ccc; text-align: center; }
+        
+        /* 新增文字輸入框樣式 */
+        input[type="text"] { width: 150px; padding: 6px; border-radius: 6px; border: 1px solid #ccc; }
 
         /* Buttons */
         .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
@@ -148,8 +151,8 @@
 
 <div class="container">
     <header>
-        <h1>AI 六邊形歸類器 (雙模式)</h1>
-        <p class="desc">支援「忽略顏色」與「區分顏色」兩種分析方式</p>
+        <h1>AI 六邊形歸類器 (關鍵字過濾版)</h1>
+        <p class="desc">支援「忽略顏色」與「區分顏色」分析，並可篩選特定檔名</p>
     </header>
 
     <div class="mode-switch">
@@ -170,11 +173,15 @@
 
     <div class="controls">
         <div class="control-item">
-            <label title="設為 0 表示完全相同才分一組">容許差異 (Distance):</label>
+            <label title="只處理檔名包含這些字的檔案，用逗號分隔">🔍 檔名過濾:</label>
+            <input type="text" id="filenameFilter" placeholder="例如: A, B (留空全選)">
+        </div>
+        <div class="control-item">
+            <label title="設為 0 表示完全相同才分一組">容許差異:</label>
             <input type="number" id="thresholdInput" value="3" min="0" max="20">
         </div>
         <div class="control-item">
-            <label title="特徵網格大小，建議 16">特徵精度 (Hash Size):</label>
+            <label title="特徵網格大小，建議 16">特徵精度:</label>
             <input type="number" id="hashSizeInput" value="16" min="8" max="32">
         </div>
     </div>
@@ -211,7 +218,7 @@
     const modal = document.getElementById('imgModal');
     const modalImg = document.getElementById('modalImg');
 
-    let selectedFiles = [];
+    let selectedFiles = []; // 儲存所有上傳的檔案
     let processingGroups = [];
     let currentMode = 'structure'; // 'structure' or 'color'
 
@@ -237,7 +244,7 @@
         document.getElementById('modeColor').className = mode === 'color' ? 'mode-option active' : 'mode-option';
         
         if (selectedFiles.length > 0) {
-            statusLog.textContent = `已切換至「${mode === 'structure' ? '僅結構' : '結構+顏色'}」模式，請點擊開始分析。`;
+            statusLog.textContent = `已切換至「${mode === 'structure' ? '僅結構' : '結構+顏色'}」模式，請確認過濾關鍵字後點擊開始分析。`;
             resultsArea.innerHTML = ''; // 清空舊結果
             excelBtn.style.display = 'none';
             zipBtn.style.display = 'none';
@@ -248,7 +255,7 @@
         const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
         if (!imgs.length) return;
         selectedFiles = [...selectedFiles, ...imgs];
-        statusLog.textContent = `✅ 已載入 ${selectedFiles.length} 張圖片`;
+        statusLog.textContent = `✅ 已載入 ${selectedFiles.length} 張圖片 (尚未過濾)`;
         processBtn.disabled = false;
         excelBtn.style.display = 'none';
         zipBtn.style.display = 'none';
@@ -265,7 +272,6 @@
 
     /**
      * 預處理：自動裁切並居中 (保留原始色彩)
-     * 注意：這裡不進行二值化，只負責把圖形放在正中間，二值化或色彩分析留給 Hash 函數
      */
     function preprocessImage(img, targetSize) {
         const w = img.naturalWidth, h = img.naturalHeight;
@@ -392,45 +398,61 @@
     }
 
     async function startAnalysis() {
-        if (!selectedFiles.length) return;
+        // --- 1. 篩選檔案邏輯 ---
+        const filterText = document.getElementById('filenameFilter').value.trim();
+        let filesToProcess = selectedFiles;
+
+        if (filterText) {
+            // 使用逗號或空白分割關鍵字，並去除空白
+            const keywords = filterText.split(/[,，\s]+/).filter(k => k);
+            
+            if (keywords.length > 0) {
+                filesToProcess = selectedFiles.filter(f => {
+                    // 只要檔名包含任何一個關鍵字 (不分大小寫)
+                    const lowerName = f.name.toLowerCase();
+                    return keywords.some(k => lowerName.includes(k.toLowerCase()));
+                });
+            }
+        }
+
+        if (filesToProcess.length === 0) {
+            alert(filterText ? "找不到符合關鍵字的圖片！" : "請先上傳圖片！");
+            return;
+        }
+
+        // --- 開始分析 ---
         processBtn.disabled = true;
         document.getElementById('progressWrap').style.display = 'block';
         resultsArea.innerHTML = '';
 
         const hashSize = parseInt(document.getElementById('hashSizeInput').value) || 16;
         const threshold = parseInt(document.getElementById('thresholdInput').value) || 3;
-        const PROCESSING_SIZE = 200; // 內部裁切處理解析度
+        const PROCESSING_SIZE = 200; 
 
         let fileData = [];
 
-        // 1. 特徵提取
-        for(let i=0; i<selectedFiles.length; i++){
-            statusLog.textContent = `提取特徵 (${currentMode === 'color' ? '含顏色' : '僅結構'}): ${selectedFiles[i].name}`;
-            progressBar.style.width = `${((i+1)/selectedFiles.length)*50}%`;
+        // 2. 特徵提取 (只處理篩選後的檔案)
+        for(let i=0; i<filesToProcess.length; i++){
+            statusLog.textContent = `[${i+1}/${filesToProcess.length}] 正在提取: ${filesToProcess[i].name}`;
+            progressBar.style.width = `${((i+1)/filesToProcess.length)*50}%`;
 
             try {
-                const img = await loadImage(selectedFiles[i]);
-                // 預處理 (保留顏色，只做裁切)
+                const img = await loadImage(filesToProcess[i]);
                 const baseCanvas = preprocessImage(img, PROCESSING_SIZE);
                 
                 let minHash = null;
-                // 旋轉 6 次取最小 Hash (解決角度問題)
                 for(const angle of ANGLES) {
                     const rot = getRotatedCanvas(baseCanvas, angle);
-                    // 根據模式計算 Hash
                     const h = calculateHash(rot, hashSize, currentMode);
-                    
-                    // 找出「字典序」最小的字串作為代表
                     if(minHash === null || h < minHash) minHash = h;
                 }
-                fileData.push({ file: selectedFiles[i], hash: minHash, name: selectedFiles[i].name });
+                fileData.push({ file: filesToProcess[i], hash: minHash, name: filesToProcess[i].name });
             } catch(e) { console.error(e); }
             
-            // 讓 UI 喘口氣
             await new Promise(r => setTimeout(r, 0));
         }
 
-        // 2. 分群
+        // 3. 分群
         statusLog.textContent = "正在進行比對...";
         let groups = [];
         for(let i=0; i<fileData.length; i++){
@@ -448,7 +470,7 @@
         processingGroups = groups;
         renderResults(groups);
 
-        statusLog.textContent = `完成！共分為 ${groups.length} 組 (${currentMode === 'structure' ? '結構' : '色彩'}模式)`;
+        statusLog.textContent = `完成！篩選後共 ${filesToProcess.length} 張，分為 ${groups.length} 組`;
         processBtn.disabled = false;
         processBtn.textContent = '重新分析';
         excelBtn.style.display = 'block';
