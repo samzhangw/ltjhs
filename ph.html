@@ -6,34 +6,37 @@
     <title>六邊形遊戲圖形歸類器 (Web版)</title>
     <style>
         :root {
-            --primary: #2563eb;
-            --bg: #f1f5f9;
-            --card: #ffffff;
-            --text: #1e293b;
+            --primary: #4f46e5;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #334155;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            padding: 2rem;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
             max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .card {
-            background: var(--card);
+            background: var(--surface);
+            padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            margin-bottom: 1.5rem;
         }
 
+        h1 { margin-top: 0; color: var(--primary); text-align: center; }
+        .desc { text-align: center; color: #64748b; margin-bottom: 2rem; }
+
+        /* 上傳區塊 */
         .upload-area {
             border: 2px dashed #cbd5e1;
             border-radius: 8px;
@@ -41,68 +44,73 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
+            background-color: #f1f5f9;
         }
-
         .upload-area:hover, .upload-area.dragover {
             border-color: var(--primary);
-            background-color: #eff6ff;
+            background-color: #e0e7ff;
         }
-
-        .btn {
-            background-color: var(--primary);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            margin-top: 1rem;
+        .upload-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        
+        /* 控制區 */
+        .controls {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
         }
         
-        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        .btn.download { background-color: #059669; display: none; }
+        label { font-weight: bold; font-size: 0.9rem; }
+        input[type="number"] { padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 60px; }
 
-        .progress-bar {
-            height: 8px;
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        button.secondary { background-color: #10b981; }
+
+        /* 進度條 */
+        .progress-container {
+            width: 100%;
+            height: 6px;
             background: #e2e8f0;
-            border-radius: 4px;
-            margin: 1rem 0;
+            border-radius: 3px;
+            margin-top: 20px;
             overflow: hidden;
             display: none;
         }
-
-        .progress-fill {
+        .progress-bar {
             height: 100%;
             background: var(--primary);
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.3s;
         }
 
-        #status {
-            color: #64748b;
-            font-size: 0.9rem;
-            white-space: pre-wrap;
-            font-family: monospace;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        /* Result Group Styling */
-        .group-container {
-            margin-top: 20px;
-        }
+        /* 結果顯示 */
+        .results { margin-top: 30px; }
         .group-block {
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             overflow: hidden;
         }
         .group-header {
             background: #f8fafc;
             padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
             font-weight: bold;
-            border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
         }
@@ -112,167 +120,164 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        .img-thumb {
-            width: 80px;
-            height: 80px;
+        .img-card {
+            width: 100px;
+            text-align: center;
+        }
+        .img-card img {
+            width: 100px;
+            height: 100px;
             object-fit: contain;
             border: 1px solid #eee;
             border-radius: 4px;
         }
-        .img-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 90px;
-        }
         .img-name {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 4px;
-            text-align: center;
-            word-break: break-all;
+            font-size: 0.75rem;
+            color: #64748b;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            width: 100%;
+            margin-top: 4px;
+        }
+
+        #statusLog {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #64748b;
+            white-space: pre-wrap;
+            max-height: 100px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>六邊形結構自動歸類器</h1>
-    <p>忽略顏色差異 • 自動旋轉比對 • 純前端處理</p>
-</div>
+<div class="container">
+    <h1>🧩 六邊形結構自動歸類器</h1>
+    <p class="desc">上傳圖片 → 自動忽略顏色與旋轉差異 → 依照幾何結構分組</p>
 
-<div class="card">
     <div class="upload-area" id="dropZone">
+        <span class="upload-icon">📂</span>
         <h3>點擊選擇或拖曳圖片至此</h3>
-        <p style="color: #64748b;">支援 .png, .jpg (建議一次選取大量圖片)</p>
+        <p>支援 .png, .jpg (建議一次選擇多張)</p>
         <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
     </div>
 
-    <div class="progress-bar" id="progressContainer">
-        <div class="progress-fill" id="progressBar"></div>
-    </div>
-    
-    <div style="display: flex; gap: 10px; justify-content: center;">
-        <button id="processBtn" class="btn" disabled>開始處理</button>
-        <button id="downloadBtn" class="btn download">下載 CSV 分組結果</button>
+    <div class="controls">
+        <div>
+            <label title="數值越小越嚴格，0表示完全相同">相似度閾值 (Distance): </label>
+            <input type="number" id="thresholdInput" value="5" min="0" max="20">
+        </div>
+        <div>
+            <label title="縮圖大小，16代表產生16x16的特徵指紋">Hash Size: </label>
+            <input type="number" id="hashSizeInput" value="16" min="8" max="32">
+        </div>
     </div>
 
-    <div id="status" style="margin-top: 15px;"></div>
-</div>
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div id="statusLog">等待圖片...</div>
 
-<div id="resultArea" class="card" style="display: none;">
-    <h2>分組預覽</h2>
-    <div id="groupsDisplay" class="group-container"></div>
+    <div style="text-align: center; margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+        <button id="processBtn" disabled>開始分析</button>
+        <button id="downloadBtn" class="secondary" style="display: none;">下載 CSV 清單</button>
+    </div>
+
+    <div id="resultsArea" class="results"></div>
 </div>
 
 <script>
-    // --- 參數設定 ---
-    const HASH_SIZE = 16; // 16x16 = 256 bits
-    const BINARY_THRESHOLD = 200; // 亮度 > 200 視為白色(背景)，否則為黑色(線條)
-    // 六邊形旋轉角度
-    const ANGLES = [0, 60, 120, 180, 240, 300];
+    // --- 核心邏輯 (JS 復刻 Python 版) ---
 
-    // --- DOM 元素 ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const processBtn = document.getElementById('processBtn');
     const downloadBtn = document.getElementById('downloadBtn');
-    const statusBox = document.getElementById('status');
+    const statusLog = document.getElementById('statusLog');
     const progressBar = document.getElementById('progressBar');
-    const progressContainer = document.getElementById('progressContainer');
-    const resultArea = document.getElementById('resultArea');
-    const groupsDisplay = document.getElementById('groupsDisplay');
-
+    const resultsArea = document.getElementById('resultsArea');
+    
     let selectedFiles = [];
-    let groupResults = [];
+    let processingGroups = [];
 
-    // --- 事件監聽 ---
+    // 設定值
+    const BINARY_THRESHOLD = 200; // 亮度 > 200 視為背景(白)，否則為線條(黑)
+    const ANGLES = [0, 60, 120, 180, 240, 300]; // 六邊形旋轉角度
+
+    // 事件監聽
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'); );
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
         handleFiles(e.dataTransfer.files);
     });
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-    processBtn.addEventListener('click', startProcessing);
+    processBtn.addEventListener('click', startAnalysis);
     downloadBtn.addEventListener('click', downloadCSV);
 
-    function log(msg) {
-        statusBox.textContent = msg;
-    }
-
     function handleFiles(files) {
-        selectedFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-        if (selectedFiles.length > 0) {
-            log(`已選擇 ${selectedFiles.length} 張圖片。準備就緒。`);
-            processBtn.disabled = false;
-            processBtn.textContent = `開始處理 ${selectedFiles.length} 張圖片`;
-            resultArea.style.display = 'none';
-            downloadBtn.style.display = 'none';
-        } else {
-            log("請選擇有效的圖片檔案。");
-        }
+        const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
+        if (imgs.length === 0) return;
+        
+        // 合併新檔案 (允許分批上傳)
+        selectedFiles = [...selectedFiles, ...imgs];
+        statusLog.textContent = `目前已選擇 ${selectedFiles.length} 張圖片。`;
+        processBtn.disabled = false;
+        processBtn.textContent = `分析 ${selectedFiles.length} 張圖片`;
+        downloadBtn.style.display = 'none';
+        resultsArea.innerHTML = '';
     }
 
-    // --- 核心邏輯：圖像處理 ---
-
-    // 1. 讀取圖片
+    // 讀取圖片並轉為 Image 物件
     function loadImage(file) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => resolve(img);
+            img.onerror = reject;
             img.src = URL.createObjectURL(file);
         });
     }
 
-    // 2. 預處理：Pad成正方形 -> 二值化 (消除顏色)
-    function getPreprocessedCanvas(img) {
-        const w = img.naturalWidth;
-        const h = img.naturalHeight;
-        const size = Math.max(w, h);
-
+    // 1. 預處理：轉正方形 + 二值化 (消除顏色)
+    function preprocessImage(img, size) {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
 
-        // 填白底 (避免透明背景干擾)
+        // 填白底
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, size, size);
 
-        // 居中繪製
+        // 居中繪製原始圖片
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2);
 
-        // 取得像素數據進行二值化
-        const imageData = ctx.getImageData(0, 0, size, size);
-        const data = imageData.data;
-
+        // 像素處理 (二值化)
+        const imgData = ctx.getImageData(0, 0, size, size);
+        const data = imgData.data;
         for (let i = 0; i < data.length; i += 4) {
-            // 計算灰階 (R,G,B 加權)
-            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            // 二值化：大於閾值變白，小於變黑 (消除顏色差異，只留線條結構)
+            // 計算灰階 (R*0.299 + G*0.587 + B*0.114)
+            const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+            // 閾值判斷：大於200變全白，小於變全黑
             const val = gray > BINARY_THRESHOLD ? 255 : 0;
-            
             data[i] = val;     // R
             data[i+1] = val;   // G
             data[i+2] = val;   // B
             // Alpha 不變
         }
-        ctx.putImageData(imageData, 0, 0);
+        ctx.putImageData(imgData, 0, 0);
         return canvas;
     }
 
-    // 3. 旋轉 Canvas
+    // 2. 旋轉
     function getRotatedCanvas(sourceCanvas, angleDeg) {
         if (angleDeg === 0) return sourceCanvas;
-        
-        const size = sourceCanvas.width; // 已經是正方形
+        const size = sourceCanvas.width;
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -280,180 +285,196 @@
 
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, size, size);
-
+        
         ctx.translate(size / 2, size / 2);
         ctx.rotate(angleDeg * Math.PI / 180);
         ctx.drawImage(sourceCanvas, -size / 2, -size / 2);
-
         return canvas;
     }
 
-    // 4. 計算 Hash (縮圖 -> 比較像素)
-    function calculateHash(canvas) {
-        // 縮圖到 HASH_SIZE (例如 16x16)
+    // 3. 計算 Hash (特徵指紋)
+    function calculateHash(canvas, hashSize) {
         const smallCanvas = document.createElement('canvas');
-        smallCanvas.width = HASH_SIZE;
-        smallCanvas.height = HASH_SIZE;
+        smallCanvas.width = hashSize;
+        smallCanvas.height = hashSize;
         const ctx = smallCanvas.getContext('2d');
         
-        // 使用高品質縮放 (類似 Python 的 Lanczos)
+        // 縮放 (類似 Python 的 Resize)
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(canvas, 0, 0, HASH_SIZE, HASH_SIZE);
+        ctx.drawImage(canvas, 0, 0, hashSize, hashSize);
 
-        const data = ctx.getImageData(0, 0, HASH_SIZE, HASH_SIZE).data;
+        const data = ctx.getImageData(0, 0, hashSize, hashSize).data;
         let pixels = [];
         let sum = 0;
-
-        // 取出灰階值
+        
+        // 取出亮度值
         for(let i=0; i<data.length; i+=4) {
-            const val = data[i]; // 已二值化，R=G=B
-            pixels.push(val);
-            sum += val;
+            pixels.push(data[i]); // 因為已經二值化，取 R 即可
+            sum += data[i];
         }
 
         const avg = sum / pixels.length;
-        let hashStr = "";
-        
-        // 產生指紋字串
-        for(let p of pixels) {
-            hashStr += (p > avg) ? "1" : "0";
+        // 產生 '101001...' 字串
+        return pixels.map(p => p > avg ? '1' : '0').join('');
+    }
+
+    // Hamming Distance (計算兩個字串有幾個位元不同)
+    function hammingDistance(s1, s2) {
+        let dist = 0;
+        for (let i = 0; i < s1.length; i++) {
+            if (s1[i] !== s2[i]) dist++;
         }
-        
-        return hashStr;
+        return dist;
     }
 
     // --- 主流程 ---
+    async function startAnalysis() {
+        if (selectedFiles.length === 0) return;
 
-    async function startProcessing() {
         processBtn.disabled = true;
-        progressContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        groupsDisplay.innerHTML = '';
+        document.getElementById('progressContainer').style.display = 'block';
+        resultsArea.innerHTML = '';
         
-        let fileHashes = {}; // { fileName: minHashStr }
-        let processedCount = 0;
+        const hashSize = parseInt(document.getElementById('hashSizeInput').value) || 16;
+        const threshold = parseInt(document.getElementById('thresholdInput').value) || 5;
 
-        // 1. 計算每張圖的「最小旋轉 Hash」
-        for (const file of selectedFiles) {
+        let fileData = []; // { file, hash, name }
+        
+        // 第一階段：生成每個檔案的 Canonical Hash
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            statusLog.textContent = `處理中 (${i+1}/${selectedFiles.length}): ${file.name}`;
+            progressBar.style.width = `${((i+1) / selectedFiles.length) * 50}%`; // 前50%進度
+
             try {
                 const img = await loadImage(file);
-                // 轉黑白 + 正方形
-                const baseCanvas = getPreprocessedCanvas(img);
-                
+                const size = Math.max(img.naturalWidth, img.naturalHeight);
+                const baseCanvas = preprocessImage(img, size);
+
+                // 暴力旋轉 6 次，找最小的 Hash
                 let minHash = null;
-                // 嘗試 6 個角度，找最小的 Hash (Canonical Hash)
                 for (const angle of ANGLES) {
                     const rotCanvas = getRotatedCanvas(baseCanvas, angle);
-                    const hash = calculateHash(rotCanvas);
-                    
-                    // 字串比對找最小 (Lexicographically smallest)
-                    if (minHash === null || hash < minHash) {
-                        minHash = hash;
+                    const h = calculateHash(rotCanvas, hashSize);
+                    if (minHash === null || h < minHash) { // 字串比較
+                        minHash = h;
                     }
                 }
-                fileHashes[file.name] = minHash;
+                fileData.push({ file: file, hash: minHash, name: file.name });
 
             } catch (err) {
-                console.error(err);
+                console.error("Error processing " + file.name, err);
             }
-
-            processedCount++;
-            const pct = Math.round((processedCount / selectedFiles.length) * 100);
-            progressBar.style.width = `${pct}%`;
-            log(`正在處理 (${processedCount}/${selectedFiles.length}): ${file.name}`);
             
-            // 讓出線程，避免 UI 卡死
+            // 讓 UI 呼吸
             await new Promise(r => setTimeout(r, 0));
         }
 
-        // 2. 分組 (完全匹配 Hash)
-        // 註：Python 版用了 Hamming Distance，但在「二值化」且「結構單純」的情況下，
-        // Hash 通常會完全一致。若需要容錯，可在這裡加入距離計算，但前端做 N^2 比對會較慢。
-        // 這裡我們先做「精確匹配」，因為二值化已經過濾了大部分雜訊。
-        
-        let groups = {}; // { hash: [fileName, ...] }
-        for (let name in fileHashes) {
-            const h = fileHashes[name];
-            if (!groups[h]) groups[h] = [];
-            groups[h].push(name);
+        // 第二階段：分組
+        statusLog.textContent = "正在進行分群比對...";
+        let groups = []; // [ { repHash: '...', files: [...] } ]
+
+        for (let i = 0; i < fileData.length; i++) {
+            const item = fileData[i];
+            let foundGroup = null;
+
+            // 尋找現有群組
+            for (let g of groups) {
+                const dist = hammingDistance(item.hash, g.repHash);
+                if (dist <= threshold) {
+                    foundGroup = g;
+                    break;
+                }
+            }
+
+            if (foundGroup) {
+                foundGroup.files.push(item);
+            } else {
+                // 建立新群組
+                groups.push({ repHash: item.hash, files: [item] });
+            }
+            
+            progressBar.style.width = `${50 + ((i+1) / fileData.length) * 50}%`;
         }
 
-        // 整理結果
-        groupResults = Object.values(groups).sort((a, b) => b.length - a.length); // 依數量排序
+        // 排序：數量多的群組排前面
+        groups.sort((a, b) => b.files.length - a.files.length);
+        processingGroups = groups;
+
+        renderResults(groups);
         
-        renderResults(groupResults);
-        
-        log(`處理完成！共分類為 ${groupResults.length} 組。`);
+        statusLog.textContent = `完成！共分為 ${groups.length} 組。`;
         processBtn.disabled = false;
-        processBtn.textContent = '重新處理';
+        processBtn.textContent = '重新分析';
         downloadBtn.style.display = 'inline-block';
-        resultArea.style.display = 'block';
+        progressBar.style.width = '100%';
     }
 
     function renderResults(groups) {
-        groups.forEach((files, index) => {
+        resultsArea.innerHTML = '';
+        groups.forEach((group, idx) => {
             const groupDiv = document.createElement('div');
             groupDiv.className = 'group-block';
-            
+
             const header = document.createElement('div');
             header.className = 'group-header';
-            header.innerHTML = `<span>Group ${index + 1}</span> <span>${files.length} 張圖片</span>`;
-            
+            header.innerHTML = `<span>Group ${idx + 1}</span> <span>${group.files.length} 張圖片</span>`;
+
             const content = document.createElement('div');
             content.className = 'group-content';
-            
-            files.slice(0, 10).forEach(fname => { // 預覽最多顯示 10 張
-                // 為了顯示圖片，我們需要找回原本的 File 物件
-                const fileObj = selectedFiles.find(f => f.name === fname);
-                if(fileObj) {
-                    const wrap = document.createElement('div');
-                    wrap.className = 'img-item';
-                    
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(fileObj);
-                    img.className = 'img-thumb';
-                    
-                    const name = document.createElement('div');
-                    name.className = 'img-name';
-                    name.textContent = fname;
-                    
-                    wrap.appendChild(img);
-                    wrap.appendChild(name);
-                    content.appendChild(wrap);
-                }
+
+            // 顯示每個群組的前 12 張圖預覽
+            group.files.slice(0, 12).forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'img-card';
+                
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(item.file);
+                
+                const name = document.createElement('div');
+                name.className = 'img-name';
+                name.textContent = item.name;
+                name.title = item.name;
+
+                card.appendChild(img);
+                card.appendChild(name);
+                content.appendChild(card);
             });
 
-            if (files.length > 10) {
+            if (group.files.length > 12) {
                 const more = document.createElement('div');
                 more.style.alignSelf = 'center';
-                more.style.color = '#666';
-                more.textContent = `...還有 ${files.length - 10} 張`;
+                more.style.color = '#999';
+                more.textContent = `(+${group.files.length - 12} more...)`;
                 content.appendChild(more);
             }
 
             groupDiv.appendChild(header);
             groupDiv.appendChild(content);
-            groupsDisplay.appendChild(groupDiv);
+            resultsArea.appendChild(groupDiv);
         });
     }
 
     function downloadCSV() {
-        let csv = "Group_ID,Files\n";
-        groupResults.forEach((files, index) => {
-            const groupName = `Group_${index + 1}`;
-            const fileList = files.join(" ");
-            csv += `${groupName},"${fileList}"\n`;
+        if (!processingGroups.length) return;
+        
+        let csvContent = "\uFEFFGroup,FileName\n"; // BOM for Excel
+        processingGroups.forEach((group, idx) => {
+            const groupName = `Layout_${String(idx + 1).padStart(2, '0')}`;
+            group.files.forEach(item => {
+                csvContent += `${groupName},${item.name}\n`;
+            });
         });
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'game_grouping_results.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = "grouped_results.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 </script>
 
